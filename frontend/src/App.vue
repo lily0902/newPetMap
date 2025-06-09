@@ -1,30 +1,57 @@
-<script setup>
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
 <template>
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
+  <div style="">
+    <div ref="mapContainer" style="width: 100%; height:100vh;" ></div>
   </div>
-  <HelloWorld msg="Vite + Vue" />
 </template>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+<script setup>
+import { ref, onMounted } from 'vue';
+
+const mapContainer = ref(null);
+
+function loadGoogleMapsApi(apiKey) {
+  return new Promise((resolve, reject) => {
+    if (window.google && window.google.maps) {
+      // 已經載入過了
+      resolve(window.google.maps);
+      return;
+    }
+
+    // 建立 script 標籤
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      resolve(window.google.maps);
+    };
+    script.onerror = () => {
+      reject(new Error('Google Maps API load error'));
+    };
+
+    document.head.appendChild(script);
+  });
 }
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
-}
-</style>
+
+onMounted(async () => {
+  try {
+    const googleMaps = await loadGoogleMapsApi('AIzaSyBfC4H3RT-whyYWCRCwB3c4WsgYgT2Oqww');
+
+    console.log(mapContainer.value);
+    const map = new googleMaps.Map(mapContainer.value, {
+      center: { lat: 25.033, lng: 121.5654 }, // 台北101附近
+      zoom: 18,
+      disableDefaultUI: true,
+    });
+
+    // 你也可以這裡新增標記、路線等
+    new googleMaps.Marker({
+      position: { lat: 25.033, lng: 121.5654 },
+      map,
+      title: '台北101',
+    });
+  } catch (error) {
+    console.error(error);
+  }
+});
+</script>
