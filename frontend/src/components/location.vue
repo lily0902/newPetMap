@@ -1,42 +1,15 @@
 <template>
 </template>
 <script setup>
-import { ref, onMounted } from 'vue';
+import { watch , inject} from 'vue';
 
-onMounted(async () => {
-    try {
-        // 定位使用者
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const userLocation = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    };
+const map = inject('googleMap') //注入來自 App.vue 的 map ref
 
-                    // 重新置中地圖
-                    map.setCenter(userLocation);
 
-                    // 顯示使用者位置的標記
-                    new googleMaps.Marker({
-                        position: userLocation,
-                        map,
-                        title: '你的位置',
-                        icon: {
-                            url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
-                        }
-                    });
-                },
-                (error) => {
-                    console.error("定位失敗", error);
-                }
-            );
-        } else {
-            alert("此瀏覽器不支援定位功能");
-        }
-    } catch (error) {
-        console.error(error);
-    }
+
+
+
+watch(map,(newMap) => {
     
 });
 </script>

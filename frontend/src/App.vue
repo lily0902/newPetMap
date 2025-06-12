@@ -11,8 +11,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, provide , watch , inject} from 'vue';
 import location from './components/location.vue';
+
+const map = ref(null);
+
+provide('googleMap', map) // 提供給子組件使用
 
 
 const mapContainer = ref(null);
@@ -27,7 +31,7 @@ function loadGoogleMapsApi(apiKey) {
 
     // 建立 script 標籤
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&v=beta`;
     script.async = true;
     script.defer = true;
     script.onload = () => {
@@ -45,6 +49,8 @@ onMounted(async () => {
   try {
     const googleMaps = await loadGoogleMapsApi('AIzaSyBfC4H3RT-whyYWCRCwB3c4WsgYgT2Oqww');
 
+    const { AdvancedMarkerElement } = google.maps.marker;
+
     // 自訂地圖樣式，隱藏所有不需要的地標
     const mapStyle = [
       {
@@ -58,7 +64,7 @@ onMounted(async () => {
     ];
 
     const map = new googleMaps.Map(mapContainer.value, {
-      center: { lat: 25.033, lng: 121.5654 }, // 台北101附近
+      //center: { lat: 25.033, lng: 121.5654 }, // 台北101附近
       zoom: 18,
       disableDefaultUI: true,
       styles: mapStyle, // 使用自訂樣式
@@ -70,6 +76,36 @@ onMounted(async () => {
     //   map,
     //   title: '台北101',
     // });
+
+    // 定位使用者
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const userLocation = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+
+                // 重新置中地圖
+                map.setCenter(userLocation);
+
+                // 顯示使用者位置的標記
+                const marker = new AdvancedMarkerElement({
+                    position: userLocation,
+                    map,
+                    title: '你的位置',
+                    icon: {
+                        url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                    }
+                });
+            },
+            (error) => {
+                console.error("定位失敗", error);
+            }
+        );
+    } else {
+        alert("此瀏覽器不支援定位功能");
+    }
 
     
   } catch (error) {
