@@ -7,17 +7,63 @@
     <span class="bar bar2"></span>
     <span class="bar bar1"></span>
   </button>
+  <div class="relative  w-fit mx-auto">
+    <input
+      v-model="searchText"
+      :class="[
+        'bg-white shadow-lg border border-gray-300 px-10 py-2 rounded-xl transition-all outline-none pr-10',
+        isFocused || searchText ? 'w-80' : 'w-89'
+      ]"
+      @focus="isFocused = true"
+      @blur="isFocused = false"
+      placeholder="Search..."
+      type="search"
+    />
+    
+    <!-- 搜尋圖示 -->
+    <svg
+      class="size-5 absolute top-2.5 left-3 text-gray-400 pointer-events-none"
+      stroke="currentColor"
+      stroke-width="1.5"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+        stroke-linejoin="round"
+        stroke-linecap="round"
+      ></path>
+    </svg>
+
+    <!-- 清除按鈕 -->
+    <button
+      v-if="searchText"
+      @click="searchText = ''"
+      class="absolute top-2.5 right-3 text-gray-400 hover:text-gray-600 "
+      type="button" 
+    >
+      ✕
+    </button>
+  </div>
   <location />
+
 </template>
 
 <script setup>
 import { ref, onMounted, provide , watch , inject} from 'vue';
 import location from './components/location.vue';
 
+const searchText = ref('');
+
 const map = ref(null);
 
 provide('googleMap', map) // 提供給子組件使用
 
+function clearSearch() {
+  searchText.value = ''
+  isFocused.value = false
+}
 
 const mapContainer = ref(null);
 
@@ -31,7 +77,7 @@ function loadGoogleMapsApi(apiKey) {
 
     // 建立 script 標籤
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&v=beta`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=marker&v=beta`;
     script.async = true;
     script.defer = true;
     script.onload = () => {
@@ -67,7 +113,8 @@ onMounted(async () => {
       //center: { lat: 25.033, lng: 121.5654 }, // 台北101附近
       zoom: 18,
       disableDefaultUI: true,
-      styles: mapStyle, // 使用自訂樣式
+      //styles: mapStyle,
+      mapId: '53b3bfe44dee182f2d3a79eb',// 使用自訂樣式
     });
 
     // 你也可以這裡新增標記、路線等
@@ -94,9 +141,9 @@ onMounted(async () => {
                     position: userLocation,
                     map,
                     title: '你的位置',
-                    icon: {
-                        url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
-                    }
+                    // icon: {
+                    //     url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                    // }
                 });
             },
             (error) => {
@@ -114,6 +161,13 @@ onMounted(async () => {
 });
 </script>
 <style scoped>
+  @import "tailwindcss";
+  /* 隱藏 Chrome/Edge 的內建清除按鈕 */
+input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
   .setting-btn {
     width: 45px;
     height: 45px;
@@ -163,5 +217,10 @@ onMounted(async () => {
   }
   .setting-btn:hover .bar2::before {
     transform: translateX(-4px);
+  }
+  .relative{
+    position:fixed;
+    top: 10px;
+    left: 40%;
   }
 </style>
