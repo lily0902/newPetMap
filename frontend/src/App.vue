@@ -39,83 +39,115 @@
     <!-- 清除按鈕 -->
     <button
       v-if="searchText"
-      @click="searchText = ''"
+      @click="clearSearch"
       class="absolute top-2.5 right-3 text-gray-400 hover:text-gray-600 "
       type="button" 
     >
       ✕
     </button>
   </div>
-  <location />
+  <Location />
 
 </template>
 
 <script setup>
-import { ref, onMounted, provide , watch , inject} from 'vue';
-import location from './components/location.vue';
+import { ref, onMounted ,watch } from 'vue';
+import { useMapStore } from '@/stores/mapStore';
+import { useGeolocation } from '@/composables/useGeolocation'; // 你之前的定位封裝
+import { useLocationStore } from '@/stores/locationStore';
+import Location from '@/components/location.vue'; // 引入 Location 組件
 
 const searchText = ref('');
 
-const map = ref(null);
+const mapContainer = ref(null);
+const isFocused = ref(false); // 用於控制輸入框的焦點狀態
+const mapStore = useMapStore();
+const locationStore = useLocationStore();
 
-provide('googleMap', map) // 提供給子組件使用
+
+
+//provide('googleMap', map) // 提供給子組件使用
 
 function clearSearch() {
   searchText.value = ''
   isFocused.value = false
 }
 
-const mapContainer = ref(null);
-
 function loadGoogleMapsApi(apiKey) {
-  return new Promise((resolve, reject) => {
-    if (window.google && window.google.maps) {
-      // 已經載入過了
-      resolve(window.google.maps);
-      return;
-    }
+      return new Promise((resolve, reject) => {
+        if (window.google && window.google.maps) {
+          // 已經載入過了
+          resolve(window.google.maps);
+          return;
+        }
 
-    // 建立 script 標籤
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=marker&v=beta`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
-      resolve(window.google.maps);
-    };
-    script.onerror = () => {
-      reject(new Error('Google Maps API load error'));
-    };
+        // 建立 script 標籤
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=marker&v=beta`;
+        script.async = true;
+        script.defer = true;
+        script.onload = () => {
+          resolve(window.google.maps);
+        };
+        script.onerror = () => {
+          reject(new Error('Google Maps API load error'));
+        };
 
-    document.head.appendChild(script);
-  });
+        document.head.appendChild(script);
+      });
 }
+
+
+
 
 onMounted(async () => {
   try {
     const googleMaps = await loadGoogleMapsApi('AIzaSyBfC4H3RT-whyYWCRCwB3c4WsgYgT2Oqww');
+    const { start } = useGeolocation(mapStore.map);
+    //console.log('mapContainer:', mapContainer.value);
 
-    const { AdvancedMarkerElement } = google.maps.marker;
+    start();
+
 
     // 自訂地圖樣式，隱藏所有不需要的地標
-    const mapStyle = [
-      {
-          "featureType": "poi.business", // 隱藏商業地標
-          "stylers": [{ "visibility": "off" }] 
-      },
-      {
-          "featureType": "poi", // 隱藏其他地標
-          "stylers": [{ "visibility": "off" }]
-      }
-    ];
+    // const mapStyle = [
+    //   {
+    //       "featureType": "poi.business", // 隱藏商業地標
+    //       "stylers": [{ "visibility": "off" }] 
+    //   },
+    //   {
+    //       "featureType": "poi", // 隱藏其他地標
+    //       "stylers": [{ "visibility": "off" }]
+    //   }
+    // ];
 
-    const map = new googleMaps.Map(mapContainer.value, {
-      //center: { lat: 25.033, lng: 121.5654 }, // 台北101附近
+    // 等待 locationStore.userLocation 有效值
+    const waitUntilLocationReady = () =>
+      new Promise((resolve) => {
+        const stop = watch(
+          () => locationStore.userLocation,
+          (loc) => {
+            if (loc.lat && loc.lng) {
+              stop(); // 停止監聽
+              resolve();
+            }
+          },
+          { immediate: true }
+        );
+      });
+
+    await waitUntilLocationReady();
+
+
+    const mapInstance = new googleMaps.Map(mapContainer.value, {
       zoom: 18,
       disableDefaultUI: true,
-      //styles: mapStyle,
-      mapId: '53b3bfe44dee182f2d3a79eb',// 使用自訂樣式
-    });
+      mapId: '53b3bfe44dee182f2d3a79eb',
+      center: locationStore.userLocation, // 使用 locationStore 中的使用者位置
+      //styles: mapStyle // 應用自訂樣式
+  });
+
+    mapStore.setMap(mapInstance);
 
     // 你也可以這裡新增標記、路線等
     // new googleMaps.Marker({
@@ -124,35 +156,9 @@ onMounted(async () => {
     //   title: '台北101',
     // });
 
-    // 定位使用者
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const userLocation = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                };
+    
 
-                // 重新置中地圖
-                map.setCenter(userLocation);
-
-                // 顯示使用者位置的標記
-                const marker = new AdvancedMarkerElement({
-                    position: userLocation,
-                    map,
-                    title: '你的位置',
-                    // icon: {
-                    //     url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
-                    // }
-                });
-            },
-            (error) => {
-                console.error("定位失敗", error);
-            }
-        );
-    } else {
-        alert("此瀏覽器不支援定位功能");
-    }
+    
 
     
   } catch (error) {
