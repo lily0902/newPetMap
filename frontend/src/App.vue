@@ -46,7 +46,7 @@
       ✕
     </button>
   </div>
-  <Location />
+  
 
 </template>
 
@@ -55,7 +55,8 @@ import { ref, onMounted ,watch } from 'vue';
 import { useMapStore } from '@/stores/mapStore';
 import { useGeolocation } from '@/composables/useGeolocation'; // 你之前的定位封裝
 import { useLocationStore } from '@/stores/locationStore';
-import Location from '@/components/location.vue'; // 引入 Location 組件
+//import Location from '@/components/location.vue'; // 引入 Location 組件
+import { usePlacesLoader } from '@/composables/usePlacesLoader';
 
 const searchText = ref('');
 
@@ -63,6 +64,10 @@ const mapContainer = ref(null);
 const isFocused = ref(false); // 用於控制輸入框的焦點狀態
 const mapStore = useMapStore();
 const locationStore = useLocationStore();
+
+const restaurantMarkers = ref([]);
+const hotelMarkers = ref([]);
+const hospitalMarkers = ref([]); // 若你有
 
 
 
@@ -83,7 +88,7 @@ function loadGoogleMapsApi(apiKey) {
 
         // 建立 script 標籤
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=marker&v=beta`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=marker,places&v=beta`;
         script.async = true;
         script.defer = true;
         script.onload = () => {
@@ -104,9 +109,13 @@ onMounted(async () => {
   try {
     const googleMaps = await loadGoogleMapsApi('AIzaSyBfC4H3RT-whyYWCRCwB3c4WsgYgT2Oqww');
     const { start } = useGeolocation(mapStore.map);
+    
     //console.log('mapContainer:', mapContainer.value);
 
     start();
+
+    
+
 
 
     // 自訂地圖樣式，隱藏所有不需要的地標
@@ -148,6 +157,21 @@ onMounted(async () => {
   });
 
     mapStore.setMap(mapInstance);
+
+    //const { loadPlaces } = usePlacesLoader(mapStore.map);
+    const { loadPlacesByType } = usePlacesLoader(mapStore.map);
+    
+    // 建議加條件檢查
+    if (mapStore.map) {
+      loadPlacesByType('restaurant', restaurantMarkers.value,
+      'https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/restaurant-71.png');
+
+      loadPlacesByType('lodging', hotelMarkers.value,
+      'https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/lodging-71.png');
+
+      loadPlacesByType('veterinary_care', hospitalMarkers.value,
+      'https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/doctor-71.png');
+    }
 
     // 你也可以這裡新增標記、路線等
     // new googleMaps.Marker({
