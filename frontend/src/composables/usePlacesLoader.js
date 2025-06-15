@@ -1,7 +1,7 @@
 // src/composables/usePlacesLoader.js
 
 export function usePlacesLoader(map) {
-    const API_KEY = '你的金鑰';
+    const API_KEY = 'AIzaSyBfC4H3RT-whyYWCRCwB3c4WsgYgT2Oqww';
 
     async function loadPlacesByType(type, markersArray, iconUrl, onClickCallback = null) {
         if (!map || !type) return;
