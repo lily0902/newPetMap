@@ -159,20 +159,19 @@ onMounted(async () => {
     mapStore.setMap(mapInstance);
 
     //const { loadPlaces } = usePlacesLoader(mapStore.map);
-    const { loadPlacesByType } = usePlacesLoader(mapStore.map);
+    const { loadPlacesByQuery } = usePlacesLoader(mapStore.map);
     
     // 建議加條件檢查
     if (mapStore.map) {
-      loadPlacesByType('restaurant', restaurantMarkers.value,
-      'https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/restaurant-71.png');
+      loadPlacesByQuery('寵物 餐廳', restaurantMarkers.value,
+      './assets/icons/restaurant.png');
 
-      loadPlacesByType('lodging', hotelMarkers.value,
-      'https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/lodging-71.png');
+      loadPlacesByQuery('寵物 住宿', hotelMarkers.value,
+      './assets/icons/hotel.png');
 
-      loadPlacesByType('veterinary_care', hospitalMarkers.value,
-      'https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/doctor-71.png');
+      loadPlacesByQuery('veterinary_care', hospitalMarkers.value,
+      './assets/icons/hospital.png');
     }
-
     // 你也可以這裡新增標記、路線等
     // new googleMaps.Marker({
     //   position: { lat: 25.033, lng: 121.5654 },
