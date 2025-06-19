@@ -70,7 +70,7 @@ const locationStore = useLocationStore();
 const restaurantMarkers = ref([]);
 const hotelMarkers = ref([]);
 const hospitalMarkers = ref([]); // 若你有
-
+const { loadPlacesByQuery } = usePlacesLoader(map, selectedPlace);
 
 
 //provide('googleMap', map) // 提供給子組件使用
