@@ -46,6 +46,7 @@
       ✕
     </button>
   </div>
+
   
 
 </template>
@@ -62,6 +63,7 @@ const searchText = ref('');
 
 const mapContainer = ref(null);
 const isFocused = ref(false); // 用於控制輸入框的焦點狀態
+const selectedPlace = ref(null);
 const mapStore = useMapStore();
 const locationStore = useLocationStore();
 
@@ -265,4 +267,5 @@ input[type="search"]::-webkit-search-cancel-button {
     top: 10px;
     left: 40%;
   }
+ 
 </style>

@@ -1,7 +1,10 @@
-export function usePlacesLoader(map) {
+// composables/usePlacesLoader.js
+import { MarkerClusterer } from "@googlemaps/markerclusterer";
+
+export function usePlacesLoader(map, selectedPlace) {
   const API_KEY = 'AIzaSyBfC4H3RT-whyYWCRCwB3c4WsgYgT2Oqww';
 
-  async function loadPlacesByQuery(query, markersArray, iconUrl, onClickCallback = null) {
+  async function loadPlacesByQuery(query, markersArray, iconUrl) {
     if (!map || !query) return;
 
     // 清除舊標記
@@ -10,35 +13,30 @@ export function usePlacesLoader(map) {
 
     const center = map.getCenter();
 
-    const url = 'https://places.googleapis.com/v1/places:searchText';
-    const requestBody = {
-      textQuery: query,
-      locationBias: {
-        circle: {
-          center: {
-            latitude: center.lat(),
-            longitude: center.lng()
-          },
-          radius: 50000
-        }
-      },
-      maxResultCount: 20
-    };
-
-    const response = await fetch(url, {
+    const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': API_KEY,
         'X-Goog-FieldMask': 'places.location,places.displayName.text'
       },
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify({
+        textQuery: query,
+        locationBias: {
+          circle: {
+            center: { latitude: center.lat(), longitude: center.lng() },
+            radius: 50000
+          }
+        },
+        maxResultCount: 20
+      })
     });
 
     const data = await response.json();
     if (!data.places) return;
 
     const { AdvancedMarkerElement } = google.maps.marker;
+    const newMarkers = [];
 
     data.places.forEach(place => {
       const location = {
@@ -46,25 +44,32 @@ export function usePlacesLoader(map) {
         lng: place.location.longitude
       };
 
-      // 自訂 icon 圖片
       const img = document.createElement('img');
       img.src = iconUrl;
       img.style.width = '30px';
       img.style.height = '30px';
+      img.classList.add('custom-marker-icon');
 
       const marker = new AdvancedMarkerElement({
-        map,
         position: location,
         content: img,
         title: place.displayName?.text || ''
       });
 
-      if (onClickCallback) {
-        marker.addListener('click', () => onClickCallback(place, marker));
-      }
+      marker.addListener('click', () => {
+        selectedPlace.value = {
+          name: place.displayName?.text,
+          lat: location.lat,
+          lng: location.lng
+        };
+      });
 
+      newMarkers.push(marker);
       markersArray.push(marker);
     });
+
+    // 使用 cluster 顯示所有 marker
+    new MarkerClusterer({ markers: newMarkers, map });
   }
 
   return { loadPlacesByQuery };
