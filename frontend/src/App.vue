@@ -88,12 +88,24 @@ function loadGoogleMapsApi(apiKey) {
 
         // 建立 script 標籤
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=marker,places&v=beta`;
-        script.async = true;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=marker,places&v=beta&loading=async`;
         script.defer = true;
+
         script.onload = () => {
-          resolve(window.google.maps);
+          const checkIfReady = setInterval(() => {
+            if (window.google && window.google.maps && window.google.maps.Map) {
+              clearInterval(checkIfReady);
+              resolve(window.google.maps);
+            }
+          }, 50);
+
+          // 最多等 5 秒
+          setTimeout(() => {
+            clearInterval(checkIfReady);
+            reject(new Error('Google Maps API loaded but window.google.maps is undefined'));
+          }, 5000);
         };
+
         script.onerror = () => {
           reject(new Error('Google Maps API load error'));
         };
@@ -107,7 +119,7 @@ function loadGoogleMapsApi(apiKey) {
 
 onMounted(async () => {
   try {
-    const googleMaps = await loadGoogleMapsApi('AIzaSyBfC4H3RT-whyYWCRCwB3c4WsgYgT2Oqww');
+    await loadGoogleMapsApi('AIzaSyBfC4H3RT-whyYWCRCwB3c4WsgYgT2Oqww');
     const { start } = useGeolocation(mapStore.map);
     
     //console.log('mapContainer:', mapContainer.value);
@@ -148,7 +160,7 @@ onMounted(async () => {
     await waitUntilLocationReady();
 
 
-    const mapInstance = new googleMaps.Map(mapContainer.value, {
+    const mapInstance = new google.maps.Map(mapContainer.value, {
       zoom: 18,
       disableDefaultUI: true,
       mapId: '53b3bfe44dee182f2d3a79eb',
