@@ -2,7 +2,7 @@
   <div style="">
     <div ref="mapContainer" style="width: 100%; height:100vh;" ></div>
   </div>
-  <button class="setting-btn">
+  <button class="setting-btn" aria-label="設定" title="設定">
     <span class="bar bar1"></span>
     <span class="bar bar2"></span>
     <span class="bar bar1"></span>
@@ -159,10 +159,10 @@ onMounted(async () => {
     mapStore.setMap(mapInstance);
 
     //const { loadPlaces } = usePlacesLoader(mapStore.map);
-    const { loadPlacesByQuery } = usePlacesLoader(mapStore.map);
-    
+    //const { loadPlacesByQuery } = usePlacesLoader(mapStore.map);
+    const { loadPlacesByQuery } = usePlacesLoader(mapInstance);
     // 建議加條件檢查
-    if (mapStore.map) {
+    if (mapInstance) {
       loadPlacesByQuery('寵物 餐廳', restaurantMarkers.value,
       './assets/icons/restaurant.png');
 
@@ -186,6 +186,7 @@ onMounted(async () => {
     
   } catch (error) {
     console.error(error);
+    alert('地圖載入失敗，請確認網路連線或 API 金鑰');
   }
 });
 </script>
