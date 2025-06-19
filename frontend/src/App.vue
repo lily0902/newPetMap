@@ -2,7 +2,7 @@
   <div style="">
     <div ref="mapContainer" style="width: 100%; height:100vh;" ></div>
   </div>
-  <button class="setting-btn" aria-label="設定" title="設定" @click="openFilterOnly">
+  <button class="setting-btn" aria-label="設定" title="設定">
     <span class="bar bar1"></span>
     <span class="bar bar2"></span>
     <span class="bar bar1"></span>
@@ -47,16 +47,7 @@
     </button>
   </div>
 
-  <InfoPanel
-    :visible="isPanelVisible"
-    :place="selectedPlace"
-    :types="['醫院', '餐廳', '住宿']"
-    :selectedTypes="activeTypes? [activeTypes] : ['醫院', '餐廳', '住宿']"
-    @close="isPanelVisible = false"
-    @toggleType="togglePlaceType"
-  />
-
-
+  
 
 </template>
 
@@ -67,21 +58,19 @@ import { useGeolocation } from '@/composables/useGeolocation'; // 你之前的�
 import { useLocationStore } from '@/stores/locationStore';
 //import Location from '@/components/location.vue'; // 引入 Location 組件
 import { usePlacesLoader } from '@/composables/usePlacesLoader';
-import InfoPanel from '@/components/InfoPanel.vue';
 
 const searchText = ref('');
 
 const mapContainer = ref(null);
 const isFocused = ref(false); // 用於控制輸入框的焦點狀態
+const selectedPlace = ref(null);
 const mapStore = useMapStore();
 const locationStore = useLocationStore();
 
 const restaurantMarkers = ref([]);
 const hotelMarkers = ref([]);
 const hospitalMarkers = ref([]); // 若你有
-const isPanelVisible = ref(false);
-const selectedPlace = ref(null);
-const activeTypes = ref(''); // 空字串代表全部顯示
+
 
 
 //provide('googleMap', map) // 提供給子組件使用
@@ -89,11 +78,6 @@ const activeTypes = ref(''); // 空字串代表全部顯示
 function clearSearch() {
   searchText.value = ''
   isFocused.value = false
-}
-
-function openFilterOnly() {
-  selectedPlace.value = null;
-  isPanelVisible.value = true;
 }
 
 function loadGoogleMapsApi(apiKey) {
@@ -131,43 +115,6 @@ function loadGoogleMapsApi(apiKey) {
         document.head.appendChild(script);
       });
 }
-
-function togglePlaceType(type) {
-  if (activeTypes.value === type) {
-    activeTypes.value = ''; // 再點一次就全部顯示
-  } else {
-    activeTypes.value = type;
-  }
-}
-
-
-function onMarkerClick(place) {
-  selectedPlace.value = place;
-  if (!isPanelVisible.value) {
-    isPanelVisible.value = true; // 初次打開才觸發動畫
-  }
-}
-
-watch(activeTypes, (newType) => {
-  // 先全部隱藏
-  hospitalMarkers.value.forEach(marker => marker.setMap(null));
-  restaurantMarkers.value.forEach(marker => marker.setMap(null));
-  hotelMarkers.value.forEach(marker => marker.setMap(null));
-
-  // 全部顯示
-  if (newType === '') {
-    hospitalMarkers.value.forEach(marker => marker.setMap(mapStore.map));
-    restaurantMarkers.value.forEach(marker => marker.setMap(mapStore.map));
-    hotelMarkers.value.forEach(marker => marker.setMap(mapStore.map));
-  } else if (newType === '醫院') {
-    hospitalMarkers.value.forEach(marker => marker.setMap(mapStore.map));
-  } else if (newType === '餐廳') {
-    restaurantMarkers.value.forEach(marker => marker.setMap(mapStore.map));
-  } else if (newType === '住宿') {
-    hotelMarkers.value.forEach(marker => marker.setMap(mapStore.map));
-  }
-});
-
 
 
 
@@ -227,18 +174,17 @@ onMounted(async () => {
 
     //const { loadPlaces } = usePlacesLoader(mapStore.map);
     //const { loadPlacesByQuery } = usePlacesLoader(mapStore.map);
-    const { loadPlacesByQuery } = usePlacesLoader(mapInstance, selectedPlace);
-
+    const { loadPlacesByQuery } = usePlacesLoader(mapInstance);
     // 建議加條件檢查
     if (mapInstance) {
       loadPlacesByQuery('寵物 餐廳', restaurantMarkers.value,
-      './assets/icons/restaurant.png',onMarkerClick);
+      './assets/icons/restaurant.png');
 
       loadPlacesByQuery('寵物 住宿', hotelMarkers.value,
-      './assets/icons/hotel.png',onMarkerClick);
+      './assets/icons/hotel.png');
 
       loadPlacesByQuery('veterinary_care', hospitalMarkers.value,
-      './assets/icons/hospital.png',onMarkerClick);
+      './assets/icons/hospital.png');
     }
     // 你也可以這裡新增標記、路線等
     // new googleMaps.Marker({
@@ -248,7 +194,7 @@ onMounted(async () => {
     // });
 
     
-    
+
     
 
     
