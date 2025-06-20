@@ -112,7 +112,8 @@ const locationStore = useLocationStore();
 const restaurantMarkers = ref([]);
 const hotelMarkers = ref([]);
 const hospitalMarkers = ref([]); // 若你有
-const { loadPlacesByQuery } = usePlacesLoader(map, selectedPlace);
+//const { loadPlacesByQuery } = usePlacesLoader(map, selectedPlace);
+
 
 
 //provide('googleMap', map) // 提供給子組件使用
@@ -155,6 +156,7 @@ function loadGoogleMapsApi(apiKey) {
     script.onerror = () => reject(new Error('Google Maps API load error'));
 
     document.head.appendChild(script);
+    
   });
 }
 
@@ -164,6 +166,8 @@ onMounted(async () => {
 
     const { start } = useGeolocation(mapStore.map);
     start();
+
+    
 
     await new Promise((resolve) => {
       const stop = watch(
