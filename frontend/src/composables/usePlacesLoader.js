@@ -1,91 +1,91 @@
 export function usePlacesLoader(map, selectedPlace) {
-  const { AdvancedMarkerElement } = google.maps.marker;
+  const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
+  // 🔸 取得詳細地點資訊
   async function fetchPlaceDetails(placeId) {
-    const response = await fetch(
-      `https://places.googleapis.com/v1/places/${placeId}?fields=displayName,location,rating,formattedAddress,formattedPhoneNumber,reviews,photos,currentOpeningHours&key=AIzaSyBfC4H3RT-whyYWCRCwB3c4WsgYgT2Oqww`
+    const res = await fetch(
+      `https://places.googleapis.com/v1/places/${placeId}?key=${API_KEY}&languageCode=zh-TW&region=TW`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': API_KEY,
+          'X-Goog-FieldMask':
+            'formattedAddress,formattedPhoneNumber,currentOpeningHours,rating,reviews,photos,vicinity,opening_hours,formatted_phone_number'
+        }
+      }
     );
-    if (!response.ok) throw new Error('Place details fetch failed');
-    return await response.json();
+    const data = await res.json();
+    return data;
   }
 
-  function loadPlacesByQuery(query, markersArray, iconUrl, onClickCallback = null) {
+  async function loadPlacesByQuery(query, markersArray, iconUrl, onMarkerClick) {
     if (!map || !query) return;
 
     // 清除舊標記
-    markersArray.forEach(marker => marker.map = null);
+    markersArray.forEach(marker => (marker.map = null));
     markersArray.length = 0;
 
     const center = map.getCenter();
 
-    const requestBody = {
-      textQuery: query,
-      locationBias: {
-        circle: {
-          center: {
-            latitude: center.lat(),
-            longitude: center.lng()
-          },
-          radius: 50000
-        }
-      },
-      maxResultCount: 15
-    };
-
-    fetch('https://places.googleapis.com/v1/places:searchText', {
+    const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Goog-Api-Key': 'AIzaSyBfC4H3RT-whyYWCRCwB3c4WsgYgT2Oqww',
-        'X-Goog-FieldMask': 'places.id,places.displayName.text,places.location'
+        'X-Goog-Api-Key': API_KEY,
+        'X-Goog-FieldMask': 'places.id,places.location,places.displayName.text'
       },
-      body: JSON.stringify(requestBody)
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (!data.places) return;
-
-      data.places.forEach(place => {
-        const position = {
-          lat: place.location.latitude,
-          lng: place.location.longitude
-        };
-
-        const img = document.createElement('img');
-        img.src = iconUrl;
-        img.style.width = '30px';
-        img.style.height = '30px';
-
-        const marker = new AdvancedMarkerElement({
-          position,
-          map,
-          title: place.displayName.text,
-          content: img
-        });
-
-        marker.addListener('click', async () => {
-          try {
-            const details = await fetchPlaceDetails(place.id);
-            selectedPlace.value = {
-              ...details,
-              place_id: place.id // 為了導航用
-            };
-            map.panTo(position);
-
-            if (typeof onClickCallback === 'function') {
-              onClickCallback(details);
-            }
-          } catch (err) {
-            console.error('Details fetch error:', err);
+      body: JSON.stringify({
+        textQuery: query,
+        locationBias: {
+          circle: {
+            center: { latitude: center.lat(), longitude: center.lng() },
+            radius: 50000
           }
-        });
-
-        markersArray.push(marker);
-      });
-    })
-    .catch(err => {
-      console.error('Place search error:', err);
+        },
+        maxResultCount: 20
+      })
     });
+
+    const data = await response.json();
+    if (!data.places) return;
+
+    const { AdvancedMarkerElement } = google.maps.marker;
+
+    for (const place of data.places) {
+      const location = {
+        lat: place.location.latitude,
+        lng: place.location.longitude
+      };
+
+      // 🧠 取得詳細資訊
+      const placeDetails = await fetchPlaceDetails(place.id);
+
+      const img = document.createElement('img');
+      img.src = iconUrl;
+      img.style.width = '30px';
+      img.style.height = '30px';
+      img.classList.add('custom-marker-icon');
+
+      const marker = new AdvancedMarkerElement({
+        position: location,
+        content: img,
+        title: place.displayName?.text || ''
+      });
+
+      marker.map = map;
+
+      marker.addListener('click', () => {
+        selectedPlace.value = {
+          ...place,
+          ...placeDetails,
+          lat: location.lat,
+          lng: location.lng
+        };
+        onMarkerClick?.(selectedPlace.value);
+      });
+
+      markersArray.push(marker);
+    }
   }
 
   return { loadPlacesByQuery };
