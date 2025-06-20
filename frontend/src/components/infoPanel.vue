@@ -75,13 +75,8 @@
           🚗 前往導航
         </a>
 
-        <!-- ❎ 關閉 -->
-        <button
-          @click="$emit('close')"
-          class="absolute top-2 right-2 text-gray-500 hover:text-black"
-        >
-          ✕
-        </button>
+        <!-- 關閉按鈕 -->
+        <button @click="$emit('close')" class="absolute top-2 right-2 text-gray-500 hover:text-black">✕</button>
       </div>
     </div>
   </transition>

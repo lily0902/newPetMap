@@ -1,6 +1,40 @@
 <template>
-  <div>
-    <div ref="mapContainer" style="width: 100%; height: 100vh"></div>
+  <div style="">
+    <div ref="mapContainer" style="width: 100%; height:100vh;" ></div>
+  </div>
+  <button class="setting-btn" aria-label="設定" title="設定">
+    <span class="bar bar1"></span>
+    <span class="bar bar2"></span>
+    <span class="bar bar1"></span>
+  </button>
+  <div class="relative  w-fit mx-auto">
+    <input
+      v-model="searchText"
+      :class="[
+        'bg-white shadow-lg border border-gray-300 px-10 py-2 rounded-xl transition-all outline-none pr-10',
+        isFocused || searchText ? 'w-80' : 'w-89'
+      ]"
+      @focus="isFocused = true"
+      @blur="isFocused = false"
+      placeholder="Search..."
+      type="search"
+    />
+    
+    <!-- 搜尋圖示 -->
+    <svg
+      class="size-5 absolute top-2.5 left-3 text-gray-400 pointer-events-none"
+      stroke="currentColor"
+      stroke-width="1.5"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+        stroke-linejoin="round"
+        stroke-linecap="round"
+      ></path>
+    </svg>
 
     <!-- 設定按鈕 -->
     <button class="setting-btn" aria-label="設定" title="設定">
@@ -65,7 +99,6 @@ import { useMapStore } from '@/stores/mapStore';
 import { useGeolocation } from '@/composables/useGeolocation';
 import { useLocationStore } from '@/stores/locationStore';
 import { usePlacesLoader } from '@/composables/usePlacesLoader';
-import InfoPanel from '@/components/InfoPanel.vue';
 
 const searchText = ref('');
 const isFocused = ref(false);
@@ -78,7 +111,11 @@ const locationStore = useLocationStore();
 
 const restaurantMarkers = ref([]);
 const hotelMarkers = ref([]);
-const hospitalMarkers = ref([]);
+const hospitalMarkers = ref([]); // 若你有
+const { loadPlacesByQuery } = usePlacesLoader(map, selectedPlace);
+
+
+//provide('googleMap', map) // 提供給子組件使用
 
 // 清除搜尋
 function clearSearch() {

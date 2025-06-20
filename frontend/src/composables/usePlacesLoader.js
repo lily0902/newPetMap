@@ -1,3 +1,6 @@
+// composables/usePlacesLoader.js
+import { MarkerClusterer } from "@googlemaps/markerclusterer";
+
 export function usePlacesLoader(map, selectedPlace) {
   const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
