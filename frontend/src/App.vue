@@ -2,7 +2,7 @@
   <div style="">
     <div ref="mapContainer" style="width: 100%; height:100vh;" ></div>
   </div>
-  <button class="setting-btn" aria-label="設定" title="設定">
+  <button class="setting-btn" aria-label="設定" title="設定" @click="openFilterPanel">
     <span class="bar bar1"></span>
     <span class="bar bar2"></span>
     <span class="bar bar1"></span>
@@ -37,7 +37,7 @@
     </svg>
 
     <!-- 設定按鈕 -->
-    <button class="setting-btn" aria-label="設定" title="設定">
+    <button class="setting-btn" aria-label="設定" title="設定" @click="openFilterPanel">
       <span class="bar bar1"></span>
       <span class="bar bar2"></span>
       <span class="bar bar1"></span>
@@ -86,9 +86,11 @@
     <InfoPanel
       :visible="isPanelVisible"
       :place="selectedPlace"
-      :types="['醫院', '餐廳', '住宿']"
-      :selectedTypes="[]"
+      :types="ALL_TYPES"
+      :selectedTypes="activeTypes"
+      :openFilterOnly="openFilterOnly"
       @close="isPanelVisible = false"
+      @toggleType="togglePlaceType"
     />
   </div>
 </template>
@@ -99,15 +101,18 @@ import { useMapStore } from '@/stores/mapStore';
 import { useGeolocation } from '@/composables/useGeolocation';
 import { useLocationStore } from '@/stores/locationStore';
 import { usePlacesLoader } from '@/composables/usePlacesLoader';
+import InfoPanel from '@/components/InfoPanel.vue';
 
 const searchText = ref('');
 const isFocused = ref(false);
 const mapContainer = ref(null);
 const selectedPlace = ref(null);
 const isPanelVisible = ref(false);
-
+const ALL_TYPES = ['醫院', '餐廳', '住宿'];
+const activeTypes = ref([...ALL_TYPES]); // 一開始就顯示全部
 const mapStore = useMapStore();
 const locationStore = useLocationStore();
+const openFilterOnly = ref(false);
 
 const restaurantMarkers = ref([]);
 const hotelMarkers = ref([]);
@@ -124,11 +129,62 @@ function clearSearch() {
   isFocused.value = false;
 }
 
-// 點擊標記開啟資訊欄
+
+function togglePlaceType(type) {
+  let newTypes = [...activeTypes.value];
+  if (newTypes.includes(type)) {
+    newTypes = newTypes.filter(t => t !== type);
+  } else {
+    newTypes.push(type);
+  }
+  activeTypes.value = newTypes;
+  console.log("目前 activeTypes：", activeTypes.value);
+}
+
+
+function openFilterPanel() {
+  openFilterOnly.value = true;
+  isPanelVisible.value = true; // 顯示面板
+  //activeTypes.value = [...ALL_TYPES]; // 點設定 → 全部重選
+}
+
 function onMarkerClick(place) {
   selectedPlace.value = place;
-  isPanelVisible.value = true;
+  if (!isPanelVisible.value) {
+    isPanelVisible.value = true; // 初次打開才觸發動畫
+  }
 }
+
+function applyFilters() {
+  const types = activeTypes.value; // ✅ 要加這一行
+  console.log('篩選器變更，activeTypes:', types);
+
+  if (!mapStore.map) {
+    console.warn('地圖尚未初始化，跳過標記更新');
+    return;
+  }
+
+   
+
+  // 全部隱藏
+  // hospitalMarkers.value.forEach(marker => marker.setMap(null));
+  // restaurantMarkers.value.forEach(marker => marker.setMap(null));
+  // hotelMarkers.value.forEach(marker => marker.setMap(null));
+
+  // 有選擇哪些就顯示哪些
+  if (types.includes('醫院')) {
+    hospitalMarkers.value.forEach(marker => marker.setMap(mapStore.map));
+  }
+  if (types.includes('餐廳')) {
+    restaurantMarkers.value.forEach(marker => marker.setMap(mapStore.map));
+  }
+  if (types.includes('住宿')) {
+    hotelMarkers.value.forEach(marker => marker.setMap(mapStore.map));
+  }
+};
+
+watch(activeTypes, applyFilters);
+
 
 // 載入 Google Maps JS API
 function loadGoogleMapsApi(apiKey) {
@@ -196,6 +252,10 @@ onMounted(async () => {
     loadPlacesByQuery('寵物 餐廳', restaurantMarkers.value, './assets/icons/restaurant.png', onMarkerClick);
     loadPlacesByQuery('寵物 住宿', hotelMarkers.value, './assets/icons/hotel.png', onMarkerClick);
     loadPlacesByQuery('veterinary_care', hospitalMarkers.value, './assets/icons/hospital.png', onMarkerClick);
+
+    //主動執行一次篩選邏輯
+    applyFilters();
+
   } catch (error) {
     console.error(error);
     alert('地圖載入失敗，請確認網路連線或 API 金鑰');
