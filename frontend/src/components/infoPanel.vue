@@ -59,6 +59,7 @@
           <p><strong>📝 評論：</strong></p>
           <ul>
             <li v-for="(review, idx) in place.reviews.slice(0, 2)" :key="idx">
+        <div class="info-row">
           <span class="label">📍 地址：</span>
           <span class="value">{{ place.vicinity || '無地址資訊' }}</span>
         </div>
