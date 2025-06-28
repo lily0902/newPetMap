@@ -158,54 +158,60 @@ function onMarkerClick(place) {
   }
 }
 
-function applyFilters() {
-  console.log('mapStore.map', mapStore.map)
-  const types = activeTypes.value; // ✅ 要加這一行
-  console.log('篩選器變更，activeTypes:', types);
-
-  if (!mapStore.map) {
-    console.warn('地圖尚未初始化，跳過標記更新');
-    return;
-  }
-
-  
-  // 選擇性顯示
-   hospitalMarkers.value.forEach(marker => {
-    marker.setMap(activeTypes.value.includes('醫院') ? mapStore.map : null);
-  });
-
-  restaurantMarkers.value.forEach(marker => {
-    marker.setMap(activeTypes.value.includes('餐廳') ? mapStore.map : null);
-  });
-
-  hotelMarkers.value.forEach(marker => {
-    marker.setMap(activeTypes.value.includes('住宿') ? mapStore.map : null);
-  });
-  // 有選擇哪些就顯示哪些
-  // if (types.includes('醫院')) {
-  //   hospitalMarkers.value.forEach(marker => marker.setMap(mapStore.map));
-  // }
-  // if (types.includes('餐廳')) {
-  //   restaurantMarkers.value.forEach(marker => marker.setMap(mapStore.map));
-  // }
-  // if (types.includes('住宿')) {
-  //   hotelMarkers.value.forEach(marker => marker.setMap(mapStore.map));
-  // }
-
-  console.log('hospitalMarkers:', hospitalMarkers.value.length);
-  console.log('restaurantMarkers:', restaurantMarkers.value.length);
-  console.log('hotelMarkers:', hotelMarkers.value.length);
-};
-
+// ✅ 篩選器 watch：變更時重新查詢地點資料
 watch(
-  [() => mapStore.map, activeTypes],
-  ([map, types]) => {
-    if (map && hospitalMarkers.value.length && restaurantMarkers.value.length && hotelMarkers.value.length) {
-      applyFilters();
+  activeTypes,
+  async (types) => {
+    if (!mapStore.map) return;
+
+    console.log('[watch] activeTypes 觸發', types);
+
+    // 清空所有標記與標記陣列
+    const clearMarkers = (markersRef) => {
+      markersRef.value.forEach(marker => marker.setMap(null));
+      markersRef.value.length = 0;
+    };
+
+    clearMarkers(hospitalMarkers);
+    clearMarkers(restaurantMarkers);
+    clearMarkers(hotelMarkers);
+
+    const { loadPlacesByQuery } = usePlacesLoader(mapStore.map, selectedPlace);
+
+    const tasks = [];
+
+    if (types.includes('醫院')) {
+      tasks.push(loadPlacesByQuery(
+        'veterinary_care',
+        hospitalMarkers.value,
+        './assets/icons/hospital.png',
+        onMarkerClick
+      ));
     }
+
+    if (types.includes('餐廳')) {
+      tasks.push(loadPlacesByQuery(
+        '寵物 餐廳',
+        restaurantMarkers.value,
+        './assets/icons/restaurant.png',
+        onMarkerClick
+      ));
+    }
+
+    if (types.includes('住宿')) {
+      tasks.push(loadPlacesByQuery(
+        '寵物 住宿',
+        hotelMarkers.value,
+        './assets/icons/hotel.png',
+        onMarkerClick
+      ));
+    }
+
+    await Promise.all(tasks);
   },
-  { immediate: true }
+  { immediate: false }
 );
+
 
 
 // 載入 Google Maps JS API
@@ -278,7 +284,7 @@ onMounted(async () => {
     ]);
 
     //主動執行一次篩選邏輯
-    applyFilters();
+    //applyFilters();
 
   } catch (error) {
     console.error(error);

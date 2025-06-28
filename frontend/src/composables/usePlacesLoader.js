@@ -66,42 +66,41 @@ export function usePlacesLoader(map, selectedPlace) {
       const { AdvancedMarkerElement } = google.maps.marker;
 
       for (const place of data.places) {
-        const location = {
-          lat: place.location.latitude,
-          lng: place.location.longitude
-        };
+  const location = {
+    lat: place.location.latitude,
+    lng: place.location.longitude
+  };
 
-        // 取得詳細資訊
-        const placeDetails = await fetchPlaceDetails(place.id);
+  // 取得詳細資訊
+  const placeDetails = await fetchPlaceDetails(place.id);
 
-        const img = document.createElement('img');
-        img.src = iconUrl;
-        img.style.width = '30px';
-        img.style.height = '30px';
-        img.classList.add('custom-marker-icon');
+  const marker = new google.maps.Marker({
+    position: location,
+    map: map,
+    icon: {
+      url: iconUrl,
+      scaledSize: new google.maps.Size(30, 30),
+      anchor: new google.maps.Point(15, 30) // 中下對齊
+    },
+    title: place.displayName?.text || ''
+  });
+        
+  //marker.map = map;
+  marker.setMap(map);      
 
-        const marker = new AdvancedMarkerElement({
-          position: location,
-          content: img,
-          title: place.displayName?.text || ''
-        });
+  marker.addListener('click', () => {
+    selectedPlace.value = {
+      ...place,
+      ...placeDetails,
+      lat: location.lat,
+      lng: location.lng
+    };
+    onMarkerClick?.(selectedPlace.value);
+  });
 
-        //marker.map = map;
-         marker.setMap(map);
+  markersArray.push(marker);
+}
 
-
-        marker.addListener('click', () => {
-          selectedPlace.value = {
-            ...place,
-            ...placeDetails,
-            lat: location.lat,
-            lng: location.lng
-          };
-          onMarkerClick?.(selectedPlace.value);
-        });
-
-        markersArray.push(marker);
-      }
     } catch (error) {
       console.error('loadPlacesByQuery error:', error);
     }
