@@ -157,8 +157,59 @@ function onMarkerClick(place) {
   }
 }
 
+// ✅ 篩選器 watch：變更時重新查詢地點資料
+watch(
+  activeTypes,
+  async (types) => {
+    if (!mapStore.map) return;
 
+    console.log('[watch] activeTypes 觸發', types);
 
+    // 清空所有標記與標記陣列
+    const clearMarkers = (markersRef) => {
+      markersRef.value.forEach(marker => marker.setMap(null));
+      markersRef.value.length = 0;
+    };
+
+    clearMarkers(hospitalMarkers);
+    clearMarkers(restaurantMarkers);
+    clearMarkers(hotelMarkers);
+
+    const { loadPlacesByQuery } = usePlacesLoader(mapStore.map, selectedPlace);
+
+    const tasks = [];
+
+    if (types.includes('醫院')) {
+      tasks.push(loadPlacesByQuery(
+        'veterinary_care',
+        hospitalMarkers.value,
+        './assets/icons/hospital.png',
+        onMarkerClick
+      ));
+    }
+
+    if (types.includes('餐廳')) {
+      tasks.push(loadPlacesByQuery(
+        '寵物 餐廳',
+        restaurantMarkers.value,
+        './assets/icons/restaurant.png',
+        onMarkerClick
+      ));
+    }
+
+    if (types.includes('住宿')) {
+      tasks.push(loadPlacesByQuery(
+        '寵物 住宿',
+        hotelMarkers.value,
+        './assets/icons/hotel.png',
+        onMarkerClick
+      ));
+    }
+
+    await Promise.all(tasks);
+  },
+  { immediate: false }
+);
 
 
 
