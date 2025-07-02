@@ -23,8 +23,13 @@ export function usePlacesLoader(map) {
 
   async function loadPlacesByQuery(query, markersArray, iconUrl, onMarkerClick) {
     if (!map || !query) return;
+
+    // 清除舊標記
     Array.from(markersArray).forEach(marker => marker.setMap && marker.setMap(null));
     markersArray.length = 0;
+
+    console.log('載入地標', query, '目前 marker array:', markersArray);
+
     const center = map.getCenter();
     try {
       const response = await fetch(
