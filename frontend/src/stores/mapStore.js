@@ -5,8 +5,8 @@ export const useMapStore = defineStore('map', () => {
   const map = ref(null);
   const userLocation = ref({ lat: null, lng: null });
 
-  function setMap(mapInstance) {
-    map.value = mapInstance;
+  function setMap(m) {
+    map.value = m;
   }
 
   function setUserLocation(lat, lng) {
