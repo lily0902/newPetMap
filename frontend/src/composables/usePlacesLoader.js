@@ -33,10 +33,8 @@ export function usePlacesLoader(map, selectedPlace) {
     if (!map || !query) return;
 
     // 清除舊標記
-    Array.from(markersArray).forEach(marker => marker.setMap && marker.setMap(null));
+    markersArray.forEach(marker => marker.setMap(null));
     markersArray.length = 0;
-
-    console.log('載入地標', query, '目前 marker array:', markersArray);
 
     const center = map.getCenter();
 
