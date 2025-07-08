@@ -30,7 +30,6 @@ export function usePlacesLoader(getMap, selectedPlace) {
 
   async function loadPlacesByQuery(query, markersArray, iconUrl, onMarkerClick) {
     const map = typeof getMap === 'function' ? getMap() : getMap;
-    console.log('usePlacesLoader 建立 marker 用的 map', map);
     if (!map || !query) return;
 
     // 清除舊標記

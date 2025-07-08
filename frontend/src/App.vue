@@ -140,7 +140,6 @@ function togglePlaceType(type) {
     // 否則就只保留這個類型
     activeTypes.value = [type];
   }
-  console.log('目前 activeTypes：', activeTypes.value);
 }
 
 
@@ -272,7 +271,6 @@ onMounted(async () => {
       center: locationStore.userLocation,
       mapId: '53b3bfe44dee182f2d3a79eb',
     });
-    console.log('App.vue 建立的 mapInstance', mapInstance);
     mapStore.setMap(mapInstance);
 
     const { loadPlacesByQuery } = usePlacesLoader(() => mapStore.getMap(), selectedPlace);
@@ -344,11 +342,6 @@ watch(
 function updateMarkersVisibility() {
   const map = mapStore.getMap();
   if (!map) return;
-  console.log('activeTypes.value:', activeTypes.value);
-  console.log('醫院 marker', hospitalMarkers.value.length, hospitalMarkers.value);
-  console.log('餐廳 marker', restaurantMarkers.value.length, restaurantMarkers.value);
-  console.log('住宿 marker', hotelMarkers.value.length, hotelMarkers.value);
-  console.log('setMap 用的 map 實例', map);
 
   window.hotelMarkers = hotelMarkers;
   window.restaurantMarkers = restaurantMarkers;
@@ -392,7 +385,6 @@ function updateMarkersVisibility() {
 </script>
 
 <style scoped>
-@import "tailwindcss";
 input[type="search"]::-webkit-search-cancel-button {
   -webkit-appearance: none;
   appearance: none;
