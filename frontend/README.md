@@ -9,10 +9,12 @@ frontend/
 ├── index.html                # 專案入口 HTML，掛載 Vue app
 ├── package.json              # 專案依賴與腳本
 ├── vite.config.js            # Vite 設定檔
+├── tailwind.config.js        # Tailwind 設定檔
+├── postcss.config.js         # PostCSS 設定檔
 ├── README.md                 # 專案說明文件
 ├── public/
 │   └── assets/
-│       └── icons/            # 各類地標圖示（醫院、餐廳、住宿等）
+│       └── icons/            # 各類地標圖示（醫院、餐廳、住宿、搜尋）
 │       └── vue.svg           # Vue 標誌
 ├── src/
 │   ├── App.vue               # 主組件，地圖與搜尋、篩選 UI
@@ -33,7 +35,7 @@ frontend/
 ## 主要目錄與檔案用途
 
 - `index.html`：專案入口 HTML，載入 Tailwind 與 Vue app。
-- `public/assets/icons/`：存放地圖標記用的 PNG 圖示。
+- `public/assets/icons/`：存放地圖標記用的 PNG 圖示（醫院、餐廳、住宿、搜尋等）。
 - `src/App.vue`：主畫面，包含地圖、搜尋欄、篩選器、資訊面板等。
 - `src/components/infoPanel.vue`：顯示地點詳細資訊的側邊面板。
 - `src/composables/useGeolocation.js`：取得並監聽使用者地理位置。
@@ -41,6 +43,9 @@ frontend/
 - `src/stores/locationStore.js`：Pinia 狀態，儲存與設定使用者定位。
 - `src/stores/mapStore.js`：Pinia 狀態，儲存地圖實例與相關操作。
 - `src/style.css`：全域樣式，含 Tailwind 設定。
+- `tailwind.config.js`：Tailwind CSS 設定檔。
+- `postcss.config.js`：PostCSS 設定檔。
+- `vite.config.js`：Vite 設定檔。
 
 ## 開發建議
 - 進入 `src/` 目錄，從 `App.vue` 開始閱讀主流程。
