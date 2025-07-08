@@ -160,11 +160,11 @@ function onMarkerClick(place) {
 
 // ✅ 篩選器 watch：變更時重新查詢地點資料
 watch(
-  activeTypes,
-  async (types) => {
-    if (!mapStore.map) return;
+  [activeTypes, () => mapStore.map],
+  async ([types, map]) => {
+    if (!map) return;
 
-    console.log('[watch] activeTypes 觸發', types);
+    console.log('[watch] activeTypes/map 觸發', types, map);
 
     // 清空所有標記與標記陣列
     const clearMarkers = (markersRef) => {
@@ -176,7 +176,7 @@ watch(
     clearMarkers(restaurantMarkers);
     clearMarkers(hotelMarkers);
 
-    const { loadPlacesByQuery } = usePlacesLoader(mapStore.map, selectedPlace);
+    const { loadPlacesByQuery } = usePlacesLoader(map, selectedPlace);
 
     const tasks = [];
 
@@ -209,7 +209,7 @@ watch(
 
     await Promise.all(tasks);
   },
-  { immediate: false }
+  { immediate: true }
 );
 
 
@@ -292,53 +292,73 @@ onMounted(async () => {
   }
 });
 
-// ✅ 篩選器 watch：變更時重新查詢地點資料
+// ✅ 只在地圖初始化時查詢並建立 marker
 watch(
-  activeTypes,
-  async (types) => {
-    const map = mapStore.map.value;
-    if (!map) {
-      console.warn('地圖尚未初始化');
-      return;
-    }
-
-    console.log('[watch] activeTypes 改變：', types);
-
-    
+  () => mapStore.map,
+  async (map) => {
+    if (!map) return;
+    // 清空所有標記與標記陣列
+    const clearMarkers = (markersRef) => {
+      markersRef.value.forEach(marker => marker.setMap(null));
+      markersRef.value.length = 0;
+    };
+    clearMarkers(hospitalMarkers);
+    clearMarkers(restaurantMarkers);
+    clearMarkers(hotelMarkers);
 
     const { loadPlacesByQuery } = usePlacesLoader(map, selectedPlace);
-
-    // 1. 清空所有舊的 marker
-    const clearMarkers = (markers, label) => {
-      console.log(`清除 ${label} 標記：`, markers.length);
-      markers.forEach(m => m.setMap(null));
-      markers.length = 0;
-    };
-
-    clearMarkers(hospitalMarkers.value, '醫院');
-    clearMarkers(restaurantMarkers.value, '餐廳');
-    clearMarkers(hotelMarkers.value, '住宿');
-
-    // 2. 重新載入被選中的類型
     const tasks = [];
-
-    if (types.includes('醫院')) {
-      tasks.push(loadPlacesByQuery('veterinary_care', hospitalMarkers.value, './assets/icons/hospital.png', onMarkerClick));
-    }
-
-    if (types.includes('餐廳')) {
-      tasks.push(loadPlacesByQuery('寵物 餐廳', restaurantMarkers.value, './assets/icons/restaurant.png', onMarkerClick));
-    }
-
-    if (types.includes('住宿')) {
-      tasks.push(loadPlacesByQuery('寵物 住宿', hotelMarkers.value, './assets/icons/hotel.png', onMarkerClick));
-    }
-
+    tasks.push(loadPlacesByQuery(
+      'veterinary_care',
+      hospitalMarkers.value,
+      './assets/icons/hospital.png',
+      onMarkerClick
+    ));
+    tasks.push(loadPlacesByQuery(
+      '寵物 餐廳',
+      restaurantMarkers.value,
+      './assets/icons/restaurant.png',
+      onMarkerClick
+    ));
+    tasks.push(loadPlacesByQuery(
+      '寵物 住宿',
+      hotelMarkers.value,
+      './assets/icons/hotel.png',
+      onMarkerClick
+    ));
     await Promise.all(tasks);
-    console.log('✅ 地標更新完成');
+    updateMarkersVisibility(); // 查詢完後根據篩選顯示
   },
-  { immediate: false }
+  { immediate: true }
 );
+
+// ✅ 切換篩選時只切換顯示/隱藏，不重建 marker
+watch(
+  activeTypes,
+  () => {
+    updateMarkersVisibility();
+  }
+);
+
+// 新增：根據 activeTypes 控制 marker 顯示/隱藏
+function updateMarkersVisibility() {
+  if (!mapStore.map) return;
+  if (activeTypes.value.includes('醫院')) {
+    hospitalMarkers.value.forEach(marker => marker.setMap(mapStore.map));
+  } else {
+    hospitalMarkers.value.forEach(marker => marker.setMap(null));
+  }
+  if (activeTypes.value.includes('餐廳')) {
+    restaurantMarkers.value.forEach(marker => marker.setMap(mapStore.map));
+  } else {
+    restaurantMarkers.value.forEach(marker => marker.setMap(null));
+  }
+  if (activeTypes.value.includes('住宿')) {
+    hotelMarkers.value.forEach(marker => marker.setMap(mapStore.map));
+  } else {
+    hotelMarkers.value.forEach(marker => marker.setMap(null));
+  }
+}
 </script>
 
 <style scoped>
