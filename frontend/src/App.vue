@@ -117,7 +117,9 @@ const openFilterOnly = ref(false);
 const restaurantMarkers = ref([]);
 const hotelMarkers = ref([]);
 const hospitalMarkers = ref([]); // 若你有
-let loadPlacesByQuery = null;
+//const { loadPlacesByQuery } = usePlacesLoader(map, selectedPlace);
+
+
 
 //provide('googleMap', map) // 提供給子組件使用
 
@@ -140,6 +142,8 @@ function togglePlaceType(type) {
   }
   console.log('目前 activeTypes：', activeTypes.value);
 }
+
+
 
 function openFilterPanel() {
   openFilterOnly.value = true;
@@ -171,6 +175,8 @@ watch(
     clearMarkers(hospitalMarkers);
     clearMarkers(restaurantMarkers);
     clearMarkers(hotelMarkers);
+
+    const { loadPlacesByQuery } = usePlacesLoader(mapStore.map, selectedPlace);
 
     const tasks = [];
 
@@ -206,6 +212,8 @@ watch(
   { immediate: false }
 );
 
+
+
 // 載入 Google Maps JS API
 function loadGoogleMapsApi(apiKey) {
   return new Promise((resolve, reject) => {
@@ -239,8 +247,12 @@ function loadGoogleMapsApi(apiKey) {
 onMounted(async () => {
   try {
     await loadGoogleMapsApi(import.meta.env.VITE_GOOGLE_MAPS_API_KEY);
+
     const { start } = useGeolocation(mapStore.map);
     start();
+
+    
+
     await new Promise((resolve) => {
       const stop = watch(
         () => locationStore.userLocation,
@@ -253,57 +265,80 @@ onMounted(async () => {
         { immediate: true }
       );
     });
+
     const mapInstance = new google.maps.Map(mapContainer.value, {
       zoom: 18,
       disableDefaultUI: true,
       center: locationStore.userLocation,
       mapId: '53b3bfe44dee182f2d3a79eb',
     });
+
     mapStore.setMap(mapInstance);
-    // 只建立一次 loader
-    const loader = usePlacesLoader(mapInstance, selectedPlace);
-    loadPlacesByQuery = loader.loadPlacesByQuery;
+
+    const { loadPlacesByQuery } = usePlacesLoader(mapInstance, selectedPlace);
+
     await Promise.all([
       loadPlacesByQuery('寵物 餐廳', restaurantMarkers.value, './assets/icons/restaurant.png', onMarkerClick),
       loadPlacesByQuery('寵物 住宿', hotelMarkers.value, './assets/icons/hotel.png', onMarkerClick),
       loadPlacesByQuery('veterinary_care', hospitalMarkers.value, './assets/icons/hospital.png', onMarkerClick)
     ]);
-    // 地圖準備好後再註冊 watch(activeTypes)
-    watch(
-      activeTypes,
-      async (types) => {
-        const map = mapStore.map.value;
-        if (!map) {
-          console.warn('地圖尚未初始化');
-          return;
-        }
-        // ...地標切換邏輯
-        const clearMarkers = (markersRef) => {
-          markersRef.value.forEach(marker => marker.setMap(null));
-          markersRef.value.length = 0;
-        };
-        clearMarkers(hospitalMarkers);
-        clearMarkers(restaurantMarkers);
-        clearMarkers(hotelMarkers);
-        const tasks = [];
-        if (types.includes('醫院')) {
-          tasks.push(loadPlacesByQuery('veterinary_care', hospitalMarkers.value, './assets/icons/hospital.png', onMarkerClick));
-        }
-        if (types.includes('餐廳')) {
-          tasks.push(loadPlacesByQuery('寵物 餐廳', restaurantMarkers.value, './assets/icons/restaurant.png', onMarkerClick));
-        }
-        if (types.includes('住宿')) {
-          tasks.push(loadPlacesByQuery('寵物 住宿', hotelMarkers.value, './assets/icons/hotel.png', onMarkerClick));
-        }
-        await Promise.all(tasks);
-      },
-      { immediate: false }
-    );
+
+    //主動執行一次篩選邏輯
+    //applyFilters();
+
   } catch (error) {
     console.error(error);
     alert('地圖載入失敗，請確認網路連線或 API 金鑰');
   }
 });
+
+// ✅ 篩選器 watch：變更時重新查詢地點資料
+watch(
+  activeTypes,
+  async (types) => {
+    const map = mapStore.map.value;
+    if (!map) {
+      console.warn('地圖尚未初始化');
+      return;
+    }
+
+    console.log('[watch] activeTypes 改變：', types);
+
+    
+
+    const { loadPlacesByQuery } = usePlacesLoader(map, selectedPlace);
+
+    // 1. 清空所有舊的 marker
+    const clearMarkers = (markers, label) => {
+      console.log(`清除 ${label} 標記：`, markers.length);
+      markers.forEach(m => m.setMap(null));
+      markers.length = 0;
+    };
+
+    clearMarkers(hospitalMarkers.value, '醫院');
+    clearMarkers(restaurantMarkers.value, '餐廳');
+    clearMarkers(hotelMarkers.value, '住宿');
+
+    // 2. 重新載入被選中的類型
+    const tasks = [];
+
+    if (types.includes('醫院')) {
+      tasks.push(loadPlacesByQuery('veterinary_care', hospitalMarkers.value, './assets/icons/hospital.png', onMarkerClick));
+    }
+
+    if (types.includes('餐廳')) {
+      tasks.push(loadPlacesByQuery('寵物 餐廳', restaurantMarkers.value, './assets/icons/restaurant.png', onMarkerClick));
+    }
+
+    if (types.includes('住宿')) {
+      tasks.push(loadPlacesByQuery('寵物 住宿', hotelMarkers.value, './assets/icons/hotel.png', onMarkerClick));
+    }
+
+    await Promise.all(tasks);
+    console.log('✅ 地標更新完成');
+  },
+  { immediate: false }
+);
 </script>
 
 <style scoped>
