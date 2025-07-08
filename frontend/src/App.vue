@@ -1,6 +1,6 @@
 <template>
   <div style="">
-    <div ref="mapContainer" style="width: 100%; height:100vh;" ></div>
+    <div ref="mapContainer" style="width: 100%; height:100vh;" id="map"></div>
   </div>
   <button class="setting-btn" aria-label="設定" title="設定" @click="openFilterPanel">
     <span class="bar bar1"></span>
@@ -159,58 +159,58 @@ function onMarkerClick(place) {
 }
 
 // ✅ 篩選器 watch：變更時重新查詢地點資料
-watch(
-  [activeTypes, () => mapStore.map],
-  async ([types, map]) => {
-    if (!map) return;
+// watch(
+//   [activeTypes, () => mapStore.map],
+//   async ([types, map]) => {
+//     if (!map) return;
 
-    console.log('[watch] activeTypes/map 觸發', types, map);
+//     console.log('[watch] activeTypes/map 觸發', types, map);
 
-    // 清空所有標記與標記陣列
-    const clearMarkers = (markersRef) => {
-      markersRef.value.forEach(marker => marker.setMap(null));
-      markersRef.value.length = 0;
-    };
+//     // 清空所有標記與標記陣列
+//     const clearMarkers = (markersRef) => {
+//       markersRef.value.forEach(marker => marker.setMap(null));
+//       markersRef.value.length = 0;
+//     };
 
-    clearMarkers(hospitalMarkers);
-    clearMarkers(restaurantMarkers);
-    clearMarkers(hotelMarkers);
+//     clearMarkers(hospitalMarkers);
+//     clearMarkers(restaurantMarkers);
+//     clearMarkers(hotelMarkers);
 
-    const { loadPlacesByQuery } = usePlacesLoader(map, selectedPlace);
+//     const { loadPlacesByQuery } = usePlacesLoader(map, selectedPlace);
 
-    const tasks = [];
+//     const tasks = [];
 
-    if (types.includes('醫院')) {
-      tasks.push(loadPlacesByQuery(
-        'veterinary_care',
-        hospitalMarkers.value,
-        './assets/icons/hospital.png',
-        onMarkerClick
-      ));
-    }
+//     if (types.includes('醫院')) {
+//       tasks.push(loadPlacesByQuery(
+//         'veterinary_care',
+//         hospitalMarkers.value,
+//         './assets/icons/hospital.png',
+//         onMarkerClick
+//       ));
+//     }
 
-    if (types.includes('餐廳')) {
-      tasks.push(loadPlacesByQuery(
-        '寵物 餐廳',
-        restaurantMarkers.value,
-        './assets/icons/restaurant.png',
-        onMarkerClick
-      ));
-    }
+//     if (types.includes('餐廳')) {
+//       tasks.push(loadPlacesByQuery(
+//         '寵物 餐廳',
+//         restaurantMarkers.value,
+//         './assets/icons/restaurant.png',
+//         onMarkerClick
+//       ));
+//     }
 
-    if (types.includes('住宿')) {
-      tasks.push(loadPlacesByQuery(
-        '寵物 住宿',
-        hotelMarkers.value,
-        './assets/icons/hotel.png',
-        onMarkerClick
-      ));
-    }
+//     if (types.includes('住宿')) {
+//       tasks.push(loadPlacesByQuery(
+//         '寵物 住宿',
+//         hotelMarkers.value,
+//         './assets/icons/hotel.png',
+//         onMarkerClick
+//       ));
+//     }
 
-    await Promise.all(tasks);
-  },
-  { immediate: true }
-);
+//     await Promise.all(tasks);
+//   },
+//   { immediate: true }
+// );
 
 
 
@@ -272,10 +272,10 @@ onMounted(async () => {
       center: locationStore.userLocation,
       mapId: '53b3bfe44dee182f2d3a79eb',
     });
-
+    console.log('App.vue 建立的 mapInstance', mapInstance);
     mapStore.setMap(mapInstance);
 
-    const { loadPlacesByQuery } = usePlacesLoader(mapInstance, selectedPlace);
+    const { loadPlacesByQuery } = usePlacesLoader(() => mapStore.getMap(), selectedPlace);
 
     await Promise.all([
       loadPlacesByQuery('寵物 餐廳', restaurantMarkers.value, './assets/icons/restaurant.png', onMarkerClick),
@@ -294,7 +294,7 @@ onMounted(async () => {
 
 // ✅ 只在地圖初始化時查詢並建立 marker
 watch(
-  () => mapStore.map,
+  () => mapStore.getMap(),
   async (map) => {
     if (!map) return;
     // 清空所有標記與標記陣列
@@ -306,7 +306,7 @@ watch(
     clearMarkers(restaurantMarkers);
     clearMarkers(hotelMarkers);
 
-    const { loadPlacesByQuery } = usePlacesLoader(map, selectedPlace);
+    const { loadPlacesByQuery } = usePlacesLoader(() => mapStore.getMap(), selectedPlace);
     const tasks = [];
     tasks.push(loadPlacesByQuery(
       'veterinary_care',
@@ -340,23 +340,53 @@ watch(
   }
 );
 
-// 新增：根據 activeTypes 控制 marker 顯示/隱藏
+// 新增：根據 activeTypes 控制 marker 顯示/隱藏，並加上 debug log
 function updateMarkersVisibility() {
-  if (!mapStore.map) return;
+  const map = mapStore.getMap();
+  if (!map) return;
+  console.log('activeTypes.value:', activeTypes.value);
+  console.log('醫院 marker', hospitalMarkers.value.length, hospitalMarkers.value);
+  console.log('餐廳 marker', restaurantMarkers.value.length, restaurantMarkers.value);
+  console.log('住宿 marker', hotelMarkers.value.length, hotelMarkers.value);
+  console.log('setMap 用的 map 實例', map);
+
+  window.hotelMarkers = hotelMarkers;
+  window.restaurantMarkers = restaurantMarkers;
+  window.hospitalMarkers = hospitalMarkers;
+  window.mapStore = mapStore;
+
   if (activeTypes.value.includes('醫院')) {
-    hospitalMarkers.value.forEach(marker => marker.setMap(mapStore.map));
+    hospitalMarkers.value.forEach(marker => {
+      marker.setMap(map);
+      if (typeof marker.setVisible === 'function') marker.setVisible(true);
+    });
   } else {
-    hospitalMarkers.value.forEach(marker => marker.setMap(null));
+    hospitalMarkers.value.forEach(marker => {
+      marker.setMap(null);
+      if (typeof marker.setVisible === 'function') marker.setVisible(false);
+    });
   }
   if (activeTypes.value.includes('餐廳')) {
-    restaurantMarkers.value.forEach(marker => marker.setMap(mapStore.map));
+    restaurantMarkers.value.forEach(marker => {
+      marker.setMap(map);
+      if (typeof marker.setVisible === 'function') marker.setVisible(true);
+    });
   } else {
-    restaurantMarkers.value.forEach(marker => marker.setMap(null));
+    restaurantMarkers.value.forEach(marker => {
+      marker.setMap(null);
+      if (typeof marker.setVisible === 'function') marker.setVisible(false);
+    });
   }
   if (activeTypes.value.includes('住宿')) {
-    hotelMarkers.value.forEach(marker => marker.setMap(mapStore.map));
+    hotelMarkers.value.forEach(marker => {
+      marker.setMap(map);
+      if (typeof marker.setVisible === 'function') marker.setVisible(true);
+    });
   } else {
-    hotelMarkers.value.forEach(marker => marker.setMap(null));
+    hotelMarkers.value.forEach(marker => {
+      marker.setMap(null);
+      if (typeof marker.setVisible === 'function') marker.setVisible(false);
+    });
   }
 }
 </script>

@@ -1,17 +1,21 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+
+let map = null; // 只存原生 Google Map 物件，移到外層
+const userLocation = { lat: null, lng: null };
 
 export const useMapStore = defineStore('map', () => {
-  const map = ref(null);
-  const userLocation = ref({ lat: null, lng: null });
-
   function setMap(mapInstance) {
-    map.value = mapInstance;
+    map = mapInstance;
+  }
+
+  function getMap() {
+    return map;
   }
 
   function setUserLocation(lat, lng) {
-    userLocation.value = { lat, lng };
+    userLocation.lat = lat;
+    userLocation.lng = lng;
   }
 
-  return { map, setMap, userLocation, setUserLocation };
+  return { setMap, getMap, userLocation, setUserLocation };
 });
