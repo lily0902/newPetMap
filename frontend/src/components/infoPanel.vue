@@ -1,12 +1,15 @@
 <template>
     <transition name="slide">
-        <div v-if="visible" class="info-panel">
+        <div v-if="visible" 
+            class="fixed top-0 left-0 h-full w-[90vw] max-w-[480px] bg-white border-r-2 border-gray-200 overflow-y-auto p-4 shadow-lg z-[99999] flex flex-col"
+        >
+        
         <!-- 🔹 篩選器 -->
-        <div class="filter-section">
+        <div class="flex gap-2 flex-wrap mb-3">
             <button
             v-for="type in types"
             :key="type"
-            :class="['filter-btn', selectedTypes.includes(type) ? 'active' : '']"
+            :class="['px-3 py-1 rounded-full bg-gray-200 hover:bg-indigo-200 transition', selectedTypes.includes(type) ? 'bg-indigo-600 text-white' : '']"
             @click="$emit('toggleType', type)"
             >
             {{ type }}
@@ -17,7 +20,7 @@
         <button @click="$emit('close')" class="absolute top-3 right-3 text-gray-500 hover:text-black text-3xl">✕</button>
 
         <!-- 🔸 地點資訊 -->
-        <div v-if="place" class="place-info">
+        <div v-if="place" class="flex-1">
             <h2 class="text-lg font-bold mb-2">
                 {{ place.displayName?.text || place.name || '未知地點' }}
             </h2>
@@ -27,7 +30,7 @@
             <img
                 :src="`https://places.googleapis.com/v1/${place.photos[0].name}/media?key=${API_KEY}&maxWidthPx=400`"
                 :alt="place.displayName?.text || '地點照片'"
-                class="place-photo"
+                class="max-w-full rounded-lg mb-3"
             />
             </div>
 
@@ -54,120 +57,44 @@
             </p>
 
             <!-- 🔸 評論 -->
-            <div v-if="place.reviews?.length" class="reviews-section">
-                <p class="section-title">📝 評論：</p>
+            <div v-if="place.reviews?.length" class="mt-3">
+                <p class="font-semibold mb-1">📝 評論：</p>
                 <ul class="space-y-2">
                     <li
                         v-for="(review, idx) in place.reviews.slice(0, 3)"
                         :key="idx"
-                        class="review-item whitespace-pre-line bg-gray-100 p-3 rounded-lg"
+                        class="italic text-gray-700 bg-gray-100 p-3 rounded-lg"
                     >
-                    
                         ❝ {{ review.text.text }} ❞
                     </li>
                 </ul>
-
             </div>
 
             <!-- 🔸 導航按鈕 -->
             <a
                 v-if="place.place_id || place.id"
-                class="navigate-button"
+                class="block mt-3 bg-indigo-500 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg text-center font-semibold transition"
                 :href="`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(place.displayName?.text || place.name || '')}&destination_place_id=${place.place_id || place.id}`"
                 target="_blank"
                 rel="noopener noreferrer"
             >
             🚗 前往導航
             </a>
-
-            
         </div>
         </div>
     </transition>
-    </template>
+</template>
 
-    <script setup>
-    defineProps({
-        visible: Boolean,
-        place: Object,
-        types: Array,
-        selectedTypes: Array
-    });
+<script setup>
+defineProps({
+    visible: Boolean,
+    place: Object,
+    types: Array,
+    selectedTypes: Array
+});
 
-    defineEmits(['close', 'toggleType']);
+defineEmits(['close', 'toggleType']);
 
-    // ✅ 匯入 Google Maps API Key
-    const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    </script>
-
-<style scoped>
-.info-panel {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 480px;
-    height: 100%;
-    background: white;
-    border-right: 2px solid #eee;
-    overflow-y: auto;
-    padding: 16px;
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-    z-index: 9999;
-}
-
-.slide-enter-active,
-.slide-leave-active {
-    transition: transform 0.3s ease;
-}
-.slide-enter-from {
-    transform: translateX(-100%);
-}
-.slide-leave-to {
-    transform: translateX(-100%);
-}
-
-.filter-section {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-bottom: 12px;
-}
-
-.filter-btn {
-    padding: 6px 12px;
-    border-radius: 9999px;
-    background: #eee;
-    cursor: pointer;
-}
-.filter-btn.active {
-    background: #7c3aed;
-    color: white;
-}
-
-.place-photo {
-    max-width: 100%;
-    border-radius: 8px;
-    margin-bottom: 12px;
-}
-
-.reviews-section {
-    margin-top: 12px;
-}
-.review-item {
-    margin-bottom: 8px;
-    font-style: italic;
-    color: #444;
-}
-
-.navigate-button {
-    margin-top: 12px;
-    background: #8b5cf6;
-    color: white;
-    padding: 10px 16px;
-    border-radius: 8px;
-    border: none;
-    display: block;
-    text-align: center;
-    text-decoration: none;
-}
-</style>
+// ✅ 匯入 Google Maps API Key
+const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+</script>

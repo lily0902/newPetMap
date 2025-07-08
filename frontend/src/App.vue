@@ -2,7 +2,7 @@
   <div style="">
     <div ref="mapContainer" style="width: 100%; height:100vh;" id="map"></div>
   </div>
-  <button class="setting-btn" aria-label="設定" title="設定" @click="openFilterPanel">
+  <button class="setting-btn z-50 fixed top-4 left-4" aria-label="設定" title="設定" @click="openFilterPanel">
     <span class="bar bar1"></span>
     <span class="bar bar2"></span>
     <span class="bar bar1"></span>
@@ -93,10 +93,58 @@
       @toggleType="togglePlaceType"
     />
   </div>
+  
+  <!-- 右上角新增按鈕 -->
+  <div class="fixed top-4 right-4 z-50 flex justify-end">
+    <button
+      title="Add New"
+      class="group cursor-pointer outline-none hover:rotate-90 duration-300"
+      @click="openForm"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="50px"
+        height="50px"
+        viewBox="0 0 24 24"
+        class="stroke-indigo-400 fill-none group-hover:fill-indigo-800 group-active:stroke-indigo-200 group-active:fill-indigo-600 group-active:duration-0 duration-300"
+      >
+        <path
+          d="M12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22Z"
+          stroke-width="1.5"
+        ></path>
+        <path d="M8 12H16" stroke-width="1.5"></path>
+        <path d="M12 16V8" stroke-width="1.5"></path>
+      </svg>
+    </button>
+  </div>
+
+  <!-- 彈窗表單 -->
+  <div v-if="showForm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-2">
+    <div class="w-full max-w-md sm:max-w-lg md:max-w-xl bg-white rounded-lg shadow-md p-4 sm:p-6 relative job-form animate-slide-down">
+      <button @click="closeForm" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
+      <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-4 text-center">Job Application Form</h2>
+      <form class="flex flex-col" @submit="submitForm" autocomplete="off">
+        <input v-model="form.name" type="text" class="bg-gray-100 text-gray-900 border-0 rounded-md p-2 mb-1 text-sm sm:text-base focus:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition ease-in-out duration-150" placeholder="Full Name">
+        <span v-if="errors.name" class="text-red-500 text-xs mb-2">{{ errors.name }}</span>
+        <input v-model="form.email" type="email" class="bg-gray-100 text-gray-900 border-0 rounded-md p-2 mb-1 text-sm sm:text-base focus:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition ease-in-out duration-150" placeholder="Email">
+        <span v-if="errors.email" class="text-red-500 text-xs mb-2">{{ errors.email }}</span>
+        <input v-model="form.phone" type="text" class="bg-gray-100 text-gray-900 border-0 rounded-md p-2 mb-1 text-sm sm:text-base focus:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition ease-in-out duration-150" placeholder="Phone Number">
+        <span v-if="errors.phone" class="text-red-500 text-xs mb-2">{{ errors.phone }}</span>
+        <input v-model="form.linkedin" type="text" class="bg-gray-100 text-gray-900 border-0 rounded-md p-2 mb-1 text-sm sm:text-base focus:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition ease-in-out duration-150" placeholder="LinkedIn Profile URL">
+        <span v-if="errors.linkedin" class="text-red-500 text-xs mb-2">{{ errors.linkedin }}</span>
+        <textarea v-model="form.cover" name="cover_letter" class="bg-gray-100 text-gray-900 border-0 rounded-md p-2 mb-1 text-sm sm:text-base focus:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition ease-in-out duration-150" placeholder="Cover Letter"></textarea>
+        <span v-if="errors.cover" class="text-red-500 text-xs mb-2">{{ errors.cover }}</span>
+        <input @change="handleFile" type="file" class="bg-gray-100 text-gray-900 border-0 rounded-md p-2 mb-1 text-sm sm:text-base focus:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition ease-in-out duration-150" placeholder="Resume">
+        <span v-if="errors.resume" class="text-red-500 text-xs mb-2">{{ errors.resume }}</span>
+        <button type="submit" class="bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-bold py-2 px-4 rounded-md mt-4 text-base sm:text-lg hover:bg-indigo-600 hover:to-blue-600 transition ease-in-out duration-150">Apply</button>
+      </form>
+    </div>
+  </div>
+
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, onBeforeUnmount } from 'vue';
 import { useMapStore } from '@/stores/mapStore';
 import { useGeolocation } from '@/composables/useGeolocation';
 import { useLocationStore } from '@/stores/locationStore';
@@ -113,6 +161,16 @@ const activeTypes = ref([...ALL_TYPES]); // 一開始就顯示全部
 const mapStore = useMapStore();
 const locationStore = useLocationStore();
 const openFilterOnly = ref(false);
+const showForm = ref(false);
+const form = ref({
+  name: '',
+  email: '',
+  phone: '',
+  linkedin: '',
+  cover: '',
+  resume: null
+});
+const errors = ref({});
 
 const restaurantMarkers = ref([]);
 const hotelMarkers = ref([]);
@@ -382,6 +440,53 @@ function updateMarkersVisibility() {
     });
   }
 }
+
+function openForm() {
+  showForm.value = true;
+  setTimeout(() => {
+    const firstInput = document.querySelector('.job-form input, .job-form textarea');
+    if (firstInput) firstInput.focus();
+  }, 100);
+}
+function closeForm() {
+  showForm.value = false;
+  errors.value = {};
+}
+
+function validateForm() {
+  const e = {};
+  if (!form.value.name) e.name = 'Full Name is required';
+  if (!form.value.email) e.email = 'Email is required';
+  else if (!/^\S+@\S+\.\S+$/.test(form.value.email)) e.email = 'Invalid email';
+  if (!form.value.phone) e.phone = 'Phone Number is required';
+  if (!form.value.linkedin) e.linkedin = 'LinkedIn is required';
+  if (!form.value.cover) e.cover = 'Cover Letter is required';
+  if (!form.value.resume) e.resume = 'Resume is required';
+  errors.value = e;
+  return Object.keys(e).length === 0;
+}
+
+function handleFile(e) {
+  form.value.resume = e.target.files[0];
+}
+
+function submitForm(ev) {
+  ev.preventDefault();
+  if (validateForm()) {
+    // 可在此送出資料
+    closeForm();
+  }
+}
+
+function handleEsc(e) {
+  if (e.key === 'Escape' && showForm.value) closeForm();
+}
+onMounted(() => {
+  window.addEventListener('keydown', handleEsc);
+});
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleEsc);
+});
 </script>
 
 <style scoped>
@@ -444,5 +549,18 @@ input[type="search"]::-webkit-search-cancel-button {
   position: fixed;
   top: 10px;
   left: 40%;
+}
+@keyframes slide-down {
+  0% {
+    opacity: 0;
+    transform: translateY(-200px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-slide-down {
+  animation: slide-down 0.3s cubic-bezier(0.4,0,0.2,1);
 }
 </style>
