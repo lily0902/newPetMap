@@ -15,6 +15,18 @@
 
 ### (1) map 實例管理
 - 只在 onMounted/new map 時建立一次 map instance，並用 Pinia store 的 module 變數（非 ref/reactive）全域管理：
+  **錯誤寫法（容易出現 Proxy 問題）**
+  ```js
+  // stores/mapStore.js
+  import { ref } from 'vue';
+  export const useMapStore = defineStore('map', () => {
+    const map = ref(null); // ❌ 不要用 ref/reactive 存 map instance
+    function setMap(mapInstance) { map.value = mapInstance; }
+    function getMap() { return map.value; }
+    return { map, setMap, getMap };
+  });
+  ```
+  **正確寫法**
   ```js
   // stores/mapStore.js
   let map = null;
@@ -30,6 +42,13 @@
 - marker 只用 mapStore.getMap() 拿 map 實例來建立與 setMap。
 - 切換篩選時，只呼叫 marker.setMap(map) 或 marker.setMap(null)（不重建 marker）。
 - 新版 Google Maps API 下，需同時呼叫 marker.setVisible(true/false)：
+  **錯誤寫法（只呼叫 setMap）**
+  ```js
+  // 只呼叫 setMap，部分新版 API marker 不會隱藏
+  marker.setMap(null); // ❌
+  marker.setMap(map); // ❌
+  ```
+  **正確寫法**
   ```js
   marker.setMap(map); // 顯示
   if (typeof marker.setVisible === 'function') marker.setVisible(true);
@@ -40,6 +59,14 @@
 ### (3) Proxy 問題
 - 即使 marker.getMap() === mapStore.getMap() 為 false，只要物件內容一致即可。
 - 只要功能正常，=== false 可忽略。
+- **什麼是『被 Vue 的 reactivity 系統包裝』？**
+  - 當你用 `ref()`、`reactive()` 或把物件放進 Pinia state 時，Vue 會用 Proxy 包裝這個物件，讓它變成「可追蹤變化」的響應式物件。
+  - 這個 Proxy 會攔截 get/set 操作，讓 Vue 能追蹤依賴、觸發畫面更新。
+  - 你在 console.log 看到的 `Proxy(_.fr)` 就是這種被包裝過的物件。
+  - 這種 Proxy 物件和原生物件記憶體位址不同，所以 `===` 比較會是 false，但方法和屬性都會自動轉發給原生物件。
+  - **Google Maps API 只認得原生物件，但 Proxy 會自動轉發，大多數情況下沒問題。**
+  - 只要你用的是同一個 map instance（即使被 Proxy 包裝），Google Maps API 的功能都會正常。
+  - 建議：不要用 `===` 來判斷 map/marker 是否相等，只要功能正常即可。
 
 ### (4) Debug 方法
 - 將 marker 陣列與 mapStore 掛到 window，方便在 console 直接操作：
