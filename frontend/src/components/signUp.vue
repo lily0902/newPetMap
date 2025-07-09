@@ -124,8 +124,12 @@
 <template>
     <div class="flex flex-col items-center justify-center content-center min-h-screen bg-indigo-950">
         <div class="form-container ">
-            <p class="title">Login</p>
+            <p class="title">Sign Up</p>
             <form class="form">
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input type="text" name="username" id="username" placeholder="">
+                </div>
                 <div class="input-group">
                     <label for="username">Email</label>
                     <input type="text" name="email" id="email" placeholder="">
@@ -137,11 +141,11 @@
                         <a  href="#" @click.prevent="router.push('/forgotPassword')">Forgot Password ?</a>
                     </div>
                 </div>
-                <button class="sign">Sign in</button>
+                <button class="sign">Sign up</button>
             </form>
             
-            <p class="signup mt-5">Don't have an account?
-                <a  href="#" class="" @click.prevent="router.push('/signUp')">Sign up</a>
+            <p class="signup mt-5">Already have an account?
+                <a rel="noopener noreferrer" href="#" class="" @click.prevent="router.push('/login')">Log in </a>
             </p>
         </div>
     </div>

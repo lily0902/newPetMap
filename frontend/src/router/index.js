@@ -16,6 +16,11 @@ const routes = [
     name: 'ForgotPassword',
     component: () => import('../components/forgotPassword.vue')
   },
+  {
+    path: '/signUp',
+    name: 'SignUp',
+    component: () => import('../components/signUp.vue')
+  },
   // 你可以在這裡加其他路由
 ];
 
