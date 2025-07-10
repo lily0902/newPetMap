@@ -125,21 +125,25 @@
     <div class="flex flex-col items-center justify-center content-center min-h-screen bg-indigo-950">
         <div class="form-container ">
             <p class="title">Login</p>
-            <form class="form">
+            <!-- 表單 -->
+            <form class="form" @submit.prevent="login">
                 <div class="input-group">
-                    <label for="username">Email</label>
-                    <input type="text" name="email" id="email" placeholder="">
+                    <label for="email">Email</label>
+                    <input type="text" name="email" id="email" placeholder="帳號" v-model="email">
                 </div>
                 <div class="input-group">
                     <label for="password">Password</label>
-                    <input type="password" name="password" id="password" placeholder="">
+                    <input type="password" name="password" id="password" placeholder="密碼" v-model="password">
+                    <span class="wrong" style="height:21px;">{{ errMsg }}</span>
                     <div class="forgot">
                         <a  href="#" @click.prevent="router.push('/forgotPassword')">Forgot Password ?</a>
                     </div>
                 </div>
-                <button class="sign">Sign in</button>
+                <button class="sign" type="submit">Sign in</button>
             </form>
-            
+            <!-- 表單結束 -->
+
+            <!-- 註冊 -->
             <p class="signup mt-5">Don't have an account?
                 <a  href="#" class="" @click.prevent="router.push('/signUp')">Sign up</a>
             </p>
@@ -150,5 +154,25 @@
 
 <script setup>
 import { useRouter } from 'vue-router';
+import { ref } from 'vue';
+import axios from 'axios';
+
 const router = useRouter();
+const email = ref('') // 使用 email
+const password = ref('') // 使用 password
+const errMsg = ref('')
+
+const login = async () => {
+  errMsg.value = ''
+  try {
+    const res = await axios.post('http://localhost:3000/api/login', {
+      email: email.value,
+      password: password.value
+    })
+    // 這裡可根據需求處理登入成功，例如儲存 token 或跳轉
+    errMsg.value = '登入成功'
+  } catch (err) {
+    errMsg.value = err.response?.data?.message || '登入失敗'
+  }
+}
 </script>

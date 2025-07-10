@@ -128,7 +128,7 @@
             <form class="form">
                 <div class="input-group">
                     <label for="username">Email</label>
-                    <input type="text" name="email" id="email" placeholder="">
+                    <input type="text" name="account" id="account" placeholder="帳號">
                 </div>
                 <button class="sign mt-5">submit</button>
             </form>

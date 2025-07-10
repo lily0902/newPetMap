@@ -132,7 +132,7 @@
                 </div>
                 <div class="input-group">
                     <label for="username">Email</label>
-                    <input type="text" name="email" id="email" placeholder="">
+                    <input type="text" name="account" id="account" placeholder="帳號">
                 </div>
                 <div class="input-group">
                     <label for="password">Password</label>
