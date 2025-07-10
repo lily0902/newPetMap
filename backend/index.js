@@ -11,15 +11,42 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB 連線
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/petmap', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/petmap');
+
+mongoose.connection.on('connected', () => {
+  console.log('MongoDB 連線成功');
+  
+  // 檢查並建立 users collection
+  mongoose.connection.db.listCollections({name: 'users'}).next((err, collinfo) => {
+    if (err) {
+      console.error('檢查 collection 時發生錯誤:', err);
+      return;
+    }
+    
+    if (collinfo) {
+      console.log('users collection 已存在');
+    } else {
+      // 建立 users collection
+      mongoose.connection.db.createCollection('users', (err, result) => {
+        if (err) {
+          console.error('建立 users collection 失敗:', err);
+        } else {
+          console.log('users collection 建立成功');
+        }
+      });
+    }
+  });
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB 連線失敗:', err);
 });
 
 // User Schema
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  username: { type: String, required: true },
 });
 const User = mongoose.model('User', userSchema);
 
