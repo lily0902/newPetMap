@@ -1,174 +1,202 @@
-# Vue 3 + Vite
+# PetMap 登入系統
 
-本專案為 Vue 3 + Vite 建構的前端專案，結合 Google Maps API，並以 Pinia 管理狀態。
+這是一個完整的用戶認證系統，包含註冊、登入、登出和路由保護功能。
 
-## 專案結構說明
+## 功能特色
 
-```
-frontend/
-├── index.html                # 專案入口 HTML，掛載 Vue app
-├── package.json              # 專案依賴與腳本
-├── vite.config.js            # Vite 設定檔
-├── tailwind.config.js        # Tailwind 設定檔
-├── postcss.config.js         # PostCSS 設定檔
-├── README.md                 # 專案說明文件
-├── public/
-│   └── assets/
-│       └── icons/            # 各類地標圖示（醫院、餐廳、住宿、搜尋）
-│       └── vue.svg           # Vue 標誌
-├── src/
-│   ├── App.vue               # 主組件，地圖與搜尋、篩選 UI
-│   ├── main.js               # 入口 JS，掛載 Vue app
-│   ├── style.css             # 全域樣式（含 Tailwind）
-│   ├── assets/
-│   │   └── icons/            # 前端用的地標圖示
-│   ├── components/
-│   │   └── infoPanel.vue     # 地點詳細資訊面板元件
-│   │   └── login.vue        # 登入頁面元件
-│   │   └── signUp.vue       # 註冊頁面元件
-│   │   └── forgotPassword.vue # 忘記密碼頁面元件
-│   ├── composables/
-│   │   └── useGeolocation.js # 取得與追蹤使用者定位的組合式函式
-│   │   └── usePlacesLoader.js# Google Maps 地點查詢與標記管理
-│   ├── stores/
-│   │   └── locationStore.js  # Pinia 狀態：管理使用者定位
-│   │   └── mapStore.js       # Pinia 狀態：管理地圖實例與相關狀態
-```
+### 🔐 認證功能
+- **用戶註冊**: 支援用戶名、Email 和密碼註冊
+- **用戶登入**: 使用 Email 和密碼登入
+- **JWT Token**: 使用 JWT 進行身份驗證
+- **自動登入**: 記住登入狀態，重新整理頁面不會登出
+- **登出功能**: 清除所有認證資料
 
-## 主要目錄與檔案用途
+### 🛡️ 安全功能
+- **密碼加密**: 使用 bcrypt 加密密碼
+- **Token 驗證**: 每次請求都會驗證 JWT token
+- **路由保護**: 未登入用戶無法訪問受保護的頁面
+- **輸入驗證**: 前端和後端都有完整的輸入驗證
 
-- `index.html`：專案入口 HTML，載入 Tailwind 與 Vue app。
-- `public/assets/icons/`：存放地圖標記用的 PNG 圖示（醫院、餐廳、住宿、搜尋等）。
-- `src/App.vue`：主畫面，包含地圖、搜尋欄、篩選器、資訊面板等。
-- `src/components/infoPanel.vue`：顯示地點詳細資訊的側邊面板。
-- `src/components/login.vue`：登入頁面，支援 email/password 登入，並有「忘記密碼」與「註冊」導頁連結。
-- `src/components/signUp.vue`：註冊頁面，支援新用戶註冊，並有「登入」與「忘記密碼」導頁連結。
-- `src/components/forgotPassword.vue`：忘記密碼頁面，支援 email 填寫與送出，並有「註冊」導頁連結。
-- `src/composables/useGeolocation.js`：取得並監聽使用者地理位置。
-- `src/composables/usePlacesLoader.js`：Google Maps API 地點查詢、標記建立與管理。
-- `src/stores/locationStore.js`：Pinia 狀態，儲存與設定使用者定位。
-- `src/stores/mapStore.js`：Pinia 狀態，儲存地圖實例與相關操作。
-- `src/style.css`：全域樣式，含 Tailwind 設定。
-- `tailwind.config.js`：Tailwind CSS 設定檔。
-- `postcss.config.js`：PostCSS 設定檔。
-- `vite.config.js`：Vite 設定檔。
+### 🎨 用戶體驗
+- **載入狀態**: 所有操作都有載入指示器
+- **錯誤處理**: 友善的錯誤訊息顯示
+- **響應式設計**: 支援桌面和手機瀏覽
+- **無障礙設計**: 支援鍵盤導航和螢幕閱讀器
 
-## 開發建議
-- 進入 `src/` 目錄，從 `App.vue` 開始閱讀主流程。
-- 若需擴充地標類型，請參考 `usePlacesLoader.js` 與 `App.vue` 內的 `ALL_TYPES` 設定。
-- 若需調整地圖行為，請參考 `mapStore.js` 與 `useGeolocation.js`。
+## 快速開始
 
-## SPA 路由與登入/註冊/忘記密碼頁面
-
-本專案採用 Vue Router 實現單頁應用（SPA）結構，主要路由如下：
-
-- `/`：首頁（Home.vue）
-- `/login`：登入頁面（login.vue）
-- `/signUp`：註冊頁面（signUp.vue）
-- `/forgotPassword`：忘記密碼頁面（forgotPassword.vue）
-
-### 路由設定檔
-路由定義於 `src/router/index.js`，可依需求擴充。
-
-#### router/index.js 範例
-```js
-import { createRouter, createWebHistory } from 'vue-router'
-import Home from '../components/Home.vue'
-import Login from '../components/login.vue'
-import SignUp from '../components/signUp.vue'
-import ForgotPassword from '../components/forgotPassword.vue'
-
-const routes = [
-  { path: '/', component: Home },
-  { path: '/login', component: Login },
-  { path: '/signUp', component: SignUp },
-  { path: '/forgotPassword', component: ForgotPassword }
-]
-
-const router = createRouter({
-  history: createWebHistory(),
-  routes
-})
-
-export default router
-```
-
-#### main.js 掛載 router 範例
-```js
-import { createApp } from 'vue'
-import App from './App.vue'
-import router from './router'
-
-createApp(App).use(router).mount('#app')
-```
-
-### 導頁方式
-各頁面間的導頁均使用 `vue-router` 的 `router.push()` 方法，範例：
-
-```vue
-<a href="#" @click.prevent="router.push('/signUp')">Sign up</a>
-```
-
-### 登入/註冊/忘記密碼元件說明
-- **login.vue**：
-  - Email/Password 輸入欄位
-  - 「Forgot Password?」連結導向 `/forgotPassword`
-  - 「Sign up」連結導向 `/signUp`
-- **signUp.vue**：
-  - Username/Email/Password 輸入欄位
-  - 「Forgot Password?」連結導向 `/forgotPassword`
-  - 「Log in」連結導向 `/login`
-- **forgotPassword.vue**：
-  - Email 輸入欄位
-  - 「Sign up」連結導向 `/signUp`
-
-所有元件皆以 Tailwind CSS utility class 為主，無需自訂 CSS。
-
----
-
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
-
-## 安裝與啟動
-
-### 1. 安裝依賴套件
+### 1. 安裝依賴
 
 ```bash
-# 進入 frontend 資料夾
+# 前端
 cd frontend
+npm install
 
-# 安裝所有依賴（建議用 npm，若用 yarn 請自行替換）
+# 後端
+cd backend
 npm install
 ```
 
-### 2. 主要開發依賴
+### 2. 環境設定
 
-| 套件         | 用途說明                    | 安裝指令                                  |
-|--------------|-----------------------------|-------------------------------------------|
-| vue          | 前端框架                    | 已在 package.json                         |
-| vite         | 開發伺服器與打包工具        | 已在 package.json                         |
-| tailwindcss  | CSS 工具框架                | 已在 package.json                         |
-| postcss      | CSS 處理器                  | 已在 package.json                         |
-| autoprefixer | CSS 前綴自動補全            | 已在 package.json                         |
-| pinia        | 狀態管理                    | npm install pinia                         |
-| vue-router   | SPA 路由                    | npm install vue-router                    |
-| @vueuse/core | Vue 組合式 API 工具庫（選用）| npm install @vueuse/core                  |
+#### 前端環境變數
+創建 `frontend/.env` 文件：
+```env
+VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+```
 
-### 3. Google Maps API
+#### 後端環境變數
+創建 `backend/.env` 文件：
+```env
+MONGODB_URI=mongodb://localhost:27017/petmap
+JWT_SECRET=your_jwt_secret_key
+PORT=3000
+```
 
-- 需自行申請 Google Maps API 金鑰，並於專案中設定。
-
-### 4. 啟動開發伺服器
+### 3. 啟動服務
 
 ```bash
+# 啟動後端 (在 backend 目錄)
+npm start
+
+# 啟動前端 (在 frontend 目錄)
 npm run dev
 ```
 
----
+## 使用流程
 
-如需安裝缺少的依賴（例如 pinia、vue-router），可直接執行：
+### 1. 註冊新用戶
+1. 訪問 `/signUp` 頁面
+2. 填寫用戶名、Email 和密碼
+3. 點擊 "Sign up" 按鈕
+4. 註冊成功後會自動跳轉到登入頁面
 
-```bash
-npm install pinia vue-router
+### 2. 用戶登入
+1. 訪問 `/login` 頁面
+2. 輸入 Email 和密碼
+3. 點擊 "Sign in" 按鈕
+4. 登入成功後會跳轉到首頁
+
+### 3. 使用應用
+- 登入後可以訪問所有功能
+- 右上角會顯示用戶資訊
+- 點擊 "登出" 按鈕可以登出
+
+### 4. 忘記密碼
+1. 在登入頁面點擊 "Forgot Password?"
+2. 輸入 Email 地址
+3. 點擊 "Send Reset Link" 按鈕
+
+## API 端點
+
+### 認證相關
+- `POST /api/register` - 用戶註冊
+- `POST /api/login` - 用戶登入
+- `GET /api/verify` - 驗證 token
+- `GET /api/profile` - 獲取用戶資料
+
+### 請求格式
+
+#### 註冊
+```json
+{
+  "username": "user123",
+  "email": "user@example.com",
+  "password": "password123"
+}
 ```
 
----
+#### 登入
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+## 檔案結構
+
+```
+frontend/
+├── src/
+│   ├── components/
+│   │   ├── login.vue          # 登入頁面
+│   │   ├── signUp.vue         # 註冊頁面
+│   │   ├── forgotPassword.vue # 忘記密碼頁面
+│   │   └── Home.vue           # 首頁（需要登入）
+│   ├── stores/
+│   │   └── authStore.js       # 認證狀態管理
+│   └── router/
+│       └── index.js           # 路由配置和守衛
+└── ...
+
+backend/
+├── index.js                   # 後端主程式
+├── package.json
+└── ...
+```
+
+## 技術棧
+
+### 前端
+- **Vue 3** - 前端框架
+- **Pinia** - 狀態管理
+- **Vue Router** - 路由管理
+- **Axios** - HTTP 客戶端
+- **Tailwind CSS** - 樣式框架
+
+### 後端
+- **Node.js** - 後端運行環境
+- **Express** - Web 框架
+- **MongoDB** - 資料庫
+- **Mongoose** - ODM
+- **JWT** - 身份驗證
+- **bcrypt** - 密碼加密
+
+## 安全注意事項
+
+1. **JWT Secret**: 請使用強密碼作為 JWT_SECRET
+2. **HTTPS**: 生產環境請使用 HTTPS
+3. **環境變數**: 不要將敏感資訊提交到版本控制
+4. **資料庫**: 定期備份資料庫
+5. **密碼政策**: 建議實施密碼強度要求
+
+## 故障排除
+
+### 常見問題
+
+1. **MongoDB 連線失敗**
+   - 確認 MongoDB 服務正在運行
+   - 檢查 MONGODB_URI 設定
+
+2. **JWT Token 無效**
+   - 確認 JWT_SECRET 設定正確
+   - 檢查 token 是否過期
+
+3. **CORS 錯誤**
+   - 確認後端 CORS 設定正確
+   - 檢查前端 API 端點設定
+
+4. **路由無法訪問**
+   - 確認路由守衛設定正確
+   - 檢查用戶認證狀態
+
+## 開發指南
+
+### 添加新功能
+1. 在 `authStore.js` 中添加新的方法
+2. 在對應的組件中使用
+3. 在後端添加相應的 API 端點
+
+### 自定義樣式
+- 所有樣式都使用 Tailwind CSS
+- 可以在組件的 `<style>` 區塊中添加自定義樣式
+
+### 擴展認證功能
+- 可以添加社交登入（Google、Facebook 等）
+- 可以添加雙因素認證
+- 可以添加郵件驗證
+
+## 授權
+
+MIT License

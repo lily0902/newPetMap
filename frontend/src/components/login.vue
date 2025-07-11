@@ -43,6 +43,13 @@
     border-color: rgba(167, 139, 250);
   }
 
+  .error-message {
+    color: #ef4444;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    min-height: 1.25rem;
+  }
+
   .forgot {
     display: flex;
     justify-content: flex-end;
@@ -72,6 +79,17 @@
     border: none;
     border-radius: 0.375rem;
     font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .sign:hover:not(:disabled) {
+    background-color: rgba(147, 119, 230, 1);
+  }
+
+  .sign:disabled {
+    background-color: rgba(107, 114, 128, 1);
+    cursor: not-allowed;
   }
 
   .social-message {
@@ -123,29 +141,51 @@
 
 <template>
     <div class="flex flex-col items-center justify-center content-center min-h-screen bg-indigo-950">
-        <div class="form-container ">
+        <div class="form-container">
             <p class="title">Login</p>
             <!-- 表單 -->
-            <form class="form" @submit.prevent="login">
+            <form class="form" @submit.prevent="handleLogin">
                 <div class="input-group">
                     <label for="email">Email</label>
-                    <input type="text" name="email" id="email" placeholder="帳號" v-model="email">
+                    <input 
+                        type="email" 
+                        name="email" 
+                        id="email" 
+                        placeholder="請輸入您的 Email" 
+                        v-model="email"
+                        :disabled="isLoading"
+                        required
+                    >
                 </div>
                 <div class="input-group">
                     <label for="password">Password</label>
-                    <input type="password" name="password" id="password" placeholder="密碼" v-model="password">
-                    <span class="wrong" style="height:21px;">{{ errMsg }}</span>
+                    <input 
+                        type="password" 
+                        name="password" 
+                        id="password" 
+                        placeholder="請輸入您的密碼" 
+                        v-model="password"
+                        :disabled="isLoading"
+                        required
+                    >
+                    <div class="error-message">{{ errorMessage }}</div>
                     <div class="forgot">
-                        <a  href="#" @click.prevent="router.push('/forgotPassword')">Forgot Password ?</a>
+                        <a href="#" @click.prevent="router.push('/forgotPassword')">Forgot Password ?</a>
                     </div>
                 </div>
-                <button class="sign" type="submit">Sign in</button>
+                <button 
+                    class="sign" 
+                    type="submit"
+                    :disabled="isLoading"
+                >
+                    {{ isLoading ? '登入中...' : 'Sign in' }}
+                </button>
             </form>
             <!-- 表單結束 -->
 
             <!-- 註冊 -->
             <p class="signup mt-5">Don't have an account?
-                <a  href="#" class="" @click.prevent="router.push('/signUp')">Sign up</a>
+                <a href="#" @click.prevent="router.push('/signUp')">Sign up</a>
             </p>
         </div>
     </div>
@@ -154,25 +194,42 @@
 
 <script setup>
 import { useRouter } from 'vue-router';
-import { ref } from 'vue';
-import axios from 'axios';
+import { ref, computed } from 'vue';
+import { useAuthStore } from '../stores/authStore';
 
 const router = useRouter();
-const email = ref('') // 使用 email
-const password = ref('') // 使用 password
-const errMsg = ref('')
+const authStore = useAuthStore();
 
-const login = async () => {
-  errMsg.value = ''
-  try {
-    const res = await axios.post('http://localhost:3000/api/login', {
-      email: email.value,
-      password: password.value
-    })
-    // 這裡可根據需求處理登入成功，例如儲存 token 或跳轉
-    errMsg.value = '登入成功'
-  } catch (err) {
-    errMsg.value = err.response?.data?.message || '登入失敗'
+// 表單資料
+const email = ref('');
+const password = ref('');
+const errorMessage = ref('');
+
+// 載入狀態
+const isLoading = computed(() => authStore.isLoading);
+
+// 處理登入
+const handleLogin = async () => {
+  // 清除之前的錯誤訊息
+  errorMessage.value = '';
+  
+  // 基本驗證
+  if (!email.value || !password.value) {
+    errorMessage.value = '請輸入 Email 和密碼';
+    return;
   }
-}
+  
+  // 呼叫 auth store 的登入方法
+  const result = await authStore.login(email.value, password.value);
+  
+  if (result.success) {
+    // 登入成功，延遲跳轉給地圖載入時間
+    setTimeout(() => {
+      router.push('/');
+    }, 500); // 延遲 0.5 秒跳轉
+  } else {
+    // 登入失敗，顯示錯誤訊息
+    errorMessage.value = result.message;
+  }
+};
 </script>

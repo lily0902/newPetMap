@@ -43,23 +43,11 @@
     border-color: rgba(167, 139, 250);
   }
 
-  .forgot {
-    display: flex;
-    justify-content: flex-end;
-    font-size: 0.75rem;
-    line-height: 1rem;
-    color: rgba(156, 163, 175,1);
-    margin: 8px 0 14px 0;
-  }
-
-  .forgot a,.signup a {
-    color: rgba(243, 244, 246, 1);
-    text-decoration: none;
-    font-size: 14px;
-  }
-
-  .forgot a:hover, .signup a:hover {
-    text-decoration: underline rgba(167, 139, 250, 1);
+  .message {
+    color: #10b981;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    min-height: 1.25rem;
   }
 
   .sign {
@@ -72,69 +60,69 @@
     border: none;
     border-radius: 0.375rem;
     font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
   }
 
-  .social-message {
-    display: flex;
-    align-items: center;
-    padding-top: 1rem;
+  .sign:hover:not(:disabled) {
+    background-color: rgba(147, 119, 230, 1);
   }
 
-  .line {
-    height: 1px;
-    flex: 1 1 0%;
-    background-color: rgba(55, 65, 81, 1);
+  .sign:disabled {
+    background-color: rgba(107, 114, 128, 1);
+    cursor: not-allowed;
   }
 
-  .social-message .message {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-    color: rgba(156, 163, 175, 1);
-  }
-
-  .social-icons {
-    display: flex;
-    justify-content: center;
-  }
-
-  .social-icons .icon {
-    border-radius: 0.125rem;
-    padding: 0.75rem;
-    border: none;
-    background-color: transparent;
-    margin-left: 8px;
-  }
-
-  .social-icons .icon svg {
-    height: 1.25rem;
-    width: 1.25rem;
-    fill: #fff;
-  }
-
-  .signup {
+  .back-link {
     text-align: center;
     font-size: 0.75rem;
     line-height: 1rem;
     color: rgba(156, 163, 175, 1);
+    margin-top: 1rem;
+  }
+
+  .back-link a {
+    color: rgba(243, 244, 246, 1);
+    text-decoration: none;
+    font-size: 14px;
+  }
+
+  .back-link a:hover {
+    text-decoration: underline rgba(167, 139, 250, 1);
   }
 </style>
 
 <template>
     <div class="flex flex-col items-center justify-center content-center min-h-screen bg-indigo-950">
-        <div class="form-container ">
-            <p class="title">Forgot Password ?</p>
-            <form class="form">
+        <div class="form-container">
+            <p class="title">Forgot Password</p>
+            <form class="form" @submit.prevent="handleSubmit">
                 <div class="input-group">
-                    <label for="username">Email</label>
-                    <input type="text" name="account" id="account" placeholder="帳號">
+                    <label for="email">Email</label>
+                    <input 
+                        type="email" 
+                        name="email" 
+                        id="email" 
+                        placeholder="請輸入您的 Email" 
+                        v-model="email"
+                        :disabled="isLoading"
+                        required
+                    >
                 </div>
-                <button class="sign mt-5">submit</button>
+                
+                <div class="message">{{ message }}</div>
+                
+                <button 
+                    class="sign" 
+                    type="submit"
+                    :disabled="isLoading"
+                >
+                    {{ isLoading ? '發送中...' : 'Send Reset Link' }}
+                </button>
             </form>
             
-            <p class="signup mt-5">Don't have an account?
-                <a rel="noopener noreferrer" href="#" class="" @click.prevent="router.push('/signUp')">Sign up</a>
+            <p class="back-link">
+                <a href="#" @click.prevent="router.push('/login')">← Back to Login</a>
             </p>
         </div>
     </div>
@@ -143,5 +131,36 @@
 
 <script setup>
 import { useRouter } from 'vue-router';
+import { ref } from 'vue';
+
 const router = useRouter();
+
+// 表單資料
+const email = ref('');
+const message = ref('');
+const isLoading = ref(false);
+
+// 處理提交
+const handleSubmit = async () => {
+  if (!email.value) {
+    message.value = '請輸入您的 Email';
+    return;
+  }
+  
+  isLoading.value = true;
+  message.value = '';
+  
+  try {
+    // 這裡可以呼叫後端 API 來發送重設密碼郵件
+    // 暫時模擬 API 呼叫
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    message.value = '重設密碼連結已發送到您的 Email';
+    email.value = '';
+  } catch (error) {
+    message.value = '發送失敗，請稍後再試';
+  } finally {
+    isLoading.value = false;
+  }
+};
 </script>
