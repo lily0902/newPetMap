@@ -127,3 +127,48 @@ createApp(App).use(router).mount('#app')
 ---
 
 Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+
+## 安裝與啟動
+
+### 1. 安裝依賴套件
+
+```bash
+# 進入 frontend 資料夾
+cd frontend
+
+# 安裝所有依賴（建議用 npm，若用 yarn 請自行替換）
+npm install
+```
+
+### 2. 主要開發依賴
+
+| 套件         | 用途說明                    | 安裝指令                                  |
+|--------------|-----------------------------|-------------------------------------------|
+| vue          | 前端框架                    | 已在 package.json                         |
+| vite         | 開發伺服器與打包工具        | 已在 package.json                         |
+| tailwindcss  | CSS 工具框架                | 已在 package.json                         |
+| postcss      | CSS 處理器                  | 已在 package.json                         |
+| autoprefixer | CSS 前綴自動補全            | 已在 package.json                         |
+| pinia        | 狀態管理                    | npm install pinia                         |
+| vue-router   | SPA 路由                    | npm install vue-router                    |
+| @vueuse/core | Vue 組合式 API 工具庫（選用）| npm install @vueuse/core                  |
+
+### 3. Google Maps API
+
+- 需自行申請 Google Maps API 金鑰，並於專案中設定。
+
+### 4. 啟動開發伺服器
+
+```bash
+npm run dev
+```
+
+---
+
+如需安裝缺少的依賴（例如 pinia、vue-router），可直接執行：
+
+```bash
+npm install pinia vue-router
+```
+
+---
