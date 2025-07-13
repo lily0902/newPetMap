@@ -11,28 +11,7 @@
       </div>
     </div>
     
-    <!-- 地圖載入失敗提示 -->
-    <div v-if="mapLoadError" class="fixed top-4 right-4 z-50 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded shadow-lg max-w-sm">
-      <div class="flex items-center">
-        <div class="flex-shrink-0">
-          <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-          </svg>
-        </div>
-        <div class="ml-3">
-          <p class="text-sm font-medium">地圖載入失敗</p>
-          <p class="text-xs mt-1">請確認網路連線或 API 金鑰設定</p>
-          <div class="mt-2 flex space-x-2">
-            <button @click="retryMapLoad" class="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700">
-              重試
-            </button>
-            <button @click="mapLoadError = false" class="text-xs bg-gray-600 text-white px-2 py-1 rounded hover:bg-gray-700">
-              關閉
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+
   </div>
   <button
     class="setting-btn fixed top-4 left-4 z-10"
@@ -204,7 +183,8 @@ const mapContainer = ref(null);
 const selectedPlace = ref(null);
 const isPanelVisible = ref(false);
 const isMapLoading = ref(true); // 地圖載入狀態
-const mapLoadError = ref(false); // 地圖載入錯誤狀態
+const retryCount = ref(0); // 重試次數
+const maxRetries = 3; // 最大重試次數
 const ALL_TYPES = ['醫院', '餐廳', '住宿'];
 const activeTypes = ref([...ALL_TYPES]); // 一開始就顯示全部
 const mapStore = useMapStore();
@@ -290,72 +270,82 @@ function loadGoogleMapsApi(apiKey) {
   });
 }
 
-onMounted(async () => {
-  try {
-    // 設置 5 秒超時
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => {
-        reject(new Error('地圖載入超時'));
-      }, 5000);
+// 地圖載入函數
+async function loadMap() {
+  // 設置 5 秒超時
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => {
+      reject(new Error('地圖載入超時'));
+    }, 5000);
+  });
+
+  // 地圖載入 Promise
+  const loadMapPromise = (async () => {
+    await loadGoogleMapsApi(import.meta.env.VITE_GOOGLE_MAPS_API_KEY);
+
+    const { start } = useGeolocation(mapStore.map);
+    start();
+
+    await new Promise((resolve) => {
+      const stop = watch(
+        () => locationStore.userLocation,
+        (loc) => {
+          if (loc.lat && loc.lng) {
+            stop();
+            resolve();
+          }
+        },
+        { immediate: true }
+      );
     });
 
-    // 地圖載入 Promise
-    const loadMapPromise = (async () => {
-      await loadGoogleMapsApi(import.meta.env.VITE_GOOGLE_MAPS_API_KEY);
+    const mapInstance = new google.maps.Map(mapContainer.value, {
+      zoom: 18,
+      disableDefaultUI: true,
+      center: locationStore.userLocation,
+      mapId: '53b3bfe44dee182f2d3a79eb',
+    });
+    mapStore.setMap(mapInstance);
 
-      const { start } = useGeolocation(mapStore.map);
-      start();
+    const { loadPlacesByQuery } = usePlacesLoader(() => mapStore.getMap(), selectedPlace);
 
-      await new Promise((resolve) => {
-        const stop = watch(
-          () => locationStore.userLocation,
-          (loc) => {
-            if (loc.lat && loc.lng) {
-              stop();
-              resolve();
-            }
-          },
-          { immediate: true }
-        );
-      });
+    await Promise.all([
+      loadPlacesByQuery('寵物 餐廳', restaurantMarkers.value, './assets/icons/restaurant.png', onMarkerClick),
+      loadPlacesByQuery('寵物 住宿', hotelMarkers.value, './assets/icons/hotel.png', onMarkerClick),
+      loadPlacesByQuery('veterinary_care', hospitalMarkers.value, './assets/icons/hospital.png', onMarkerClick)
+    ]);
+  })();
 
-      const mapInstance = new google.maps.Map(mapContainer.value, {
-        zoom: 18,
-        disableDefaultUI: true,
-        center: locationStore.userLocation,
-        mapId: '53b3bfe44dee182f2d3a79eb',
-      });
-      mapStore.setMap(mapInstance);
+  // 競爭 Promise.race：誰先完成就用誰的結果
+  await Promise.race([loadMapPromise, timeoutPromise]);
+}
 
-      const { loadPlacesByQuery } = usePlacesLoader(() => mapStore.getMap(), selectedPlace);
-
-      await Promise.all([
-        loadPlacesByQuery('寵物 餐廳', restaurantMarkers.value, './assets/icons/restaurant.png', onMarkerClick),
-        loadPlacesByQuery('寵物 住宿', hotelMarkers.value, './assets/icons/hotel.png', onMarkerClick),
-        loadPlacesByQuery('veterinary_care', hospitalMarkers.value, './assets/icons/hospital.png', onMarkerClick)
-      ]);
-
-      //主動執行一次篩選邏輯
-      //applyFilters();
-    })();
-
-    // 競爭 Promise.race：誰先完成就用誰的結果
-    await Promise.race([loadMapPromise, timeoutPromise]);
-    
-    // 載入成功，隱藏載入提示
-    isMapLoading.value = false;
-
-  } catch (error) {
-    console.error('地圖載入錯誤:', error);
-    // 載入失敗，隱藏載入提示並顯示錯誤
-    isMapLoading.value = false;
-    mapLoadError.value = true;
-    
-    // 延遲顯示 alert，給地圖一些載入時間
-    setTimeout(() => {
-      alert('地圖載入失敗，請確認網路連線或 API 金鑰');
-    }, 1000); // 延遲 1 秒顯示
+// 自動重試載入地圖
+async function autoLoadMap() {
+  isMapLoading.value = true;
+  retryCount.value = 0;
+  while (retryCount.value < maxRetries) {
+    try {
+      await loadMap();
+      isMapLoading.value = false;
+      return;
+    } catch (error) {
+      retryCount.value++;
+      if (retryCount.value >= maxRetries) {
+        isMapLoading.value = false;
+        alert('地圖載入失敗，請確認網路連線或 API 金鑰');
+        return;
+      }
+      // 等待 2 秒再重試
+      await new Promise(res => setTimeout(res, 2000));
+    }
   }
+}
+
+onMounted(() => {
+  setTimeout(() => {
+    autoLoadMap();
+  }, 100);
 });
 
 // ✅ 只在地圖初始化時查詢並建立 marker
@@ -502,59 +492,7 @@ function handleEsc(e) {
   if (e.key === 'Escape' && showForm.value) closeForm();
 }
 
-// 重試地圖載入
-async function retryMapLoad() {
-  mapLoadError.value = false;
-  isMapLoading.value = true;
-  
-  try {
-    // 重新執行地圖載入邏輯
-    await loadGoogleMapsApi(import.meta.env.VITE_GOOGLE_MAPS_API_KEY);
 
-    const { start } = useGeolocation(mapStore.map);
-    start();
-
-    await new Promise((resolve) => {
-      const stop = watch(
-        () => locationStore.userLocation,
-        (loc) => {
-          if (loc.lat && loc.lng) {
-            stop();
-            resolve();
-          }
-        },
-        { immediate: true }
-      );
-    });
-
-    const mapInstance = new google.maps.Map(mapContainer.value, {
-      zoom: 18,
-      disableDefaultUI: true,
-      center: locationStore.userLocation,
-      mapId: '53b3bfe44dee182f2d3a79eb',
-    });
-    mapStore.setMap(mapInstance);
-
-    const { loadPlacesByQuery } = usePlacesLoader(() => mapStore.getMap(), selectedPlace);
-
-    await Promise.all([
-      loadPlacesByQuery('寵物 餐廳', restaurantMarkers.value, './assets/icons/restaurant.png', onMarkerClick),
-      loadPlacesByQuery('寵物 住宿', hotelMarkers.value, './assets/icons/hotel.png', onMarkerClick),
-      loadPlacesByQuery('veterinary_care', hospitalMarkers.value, './assets/icons/hospital.png', onMarkerClick)
-    ]);
-
-    isMapLoading.value = false;
-  } catch (error) {
-    console.error('重試地圖載入失敗:', error);
-    isMapLoading.value = false;
-    mapLoadError.value = true;
-    
-    // 延遲顯示 alert
-    setTimeout(() => {
-      alert('地圖載入失敗，請確認網路連線或 API 金鑰');
-    }, 5000);
-  }
-}
 onMounted(() => {
   window.addEventListener('keydown', handleEsc);
 });
