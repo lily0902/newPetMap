@@ -287,11 +287,12 @@ async function loadMap() {
     start();
 
     await new Promise((resolve) => {
-      const stop = watch(
+      let stop = null;
+      stop = watch(
         () => locationStore.userLocation,
         (loc) => {
           if (loc.lat && loc.lng) {
-            stop();
+            if (stop) stop();
             resolve();
           }
         },

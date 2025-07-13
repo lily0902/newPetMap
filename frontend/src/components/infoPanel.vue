@@ -266,6 +266,6 @@ const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 // 處理登出功能
 const handleLogout = () => {
     authStore.logout();
-    router.push('/login');
+    //router.push('/login');
 };
 </script>
