@@ -175,8 +175,15 @@
             >
             {{ type }}
             </button>
+            <button
+              class="px-3 py-1 rounded-full bg-red-200 hover:bg-red-400 text-red-800"
+              @click="$emit('show-lost-pet')"
+            >走失</button>
         </div>
-
+        <!-- 根據 showLostPet prop 插入 lostPet.vue -->
+        <LostPet v-if="showLostPet" />
+        <!-- 地點資訊只在沒顯示 lostPet 時顯示 -->
+        <LocationInfo v-else-if="!showProfilePanel" :place="displayPlace" :API_KEY="API_KEY" @show-place-info="$emit('show-place-info')" />
         <!-- Profile 放在篩選器下方 -->
         <Profile
           v-if="showProfilePanel"
@@ -186,9 +193,6 @@
           @close="closeProfilePanel"
           @select-favorite="handleSelectFavorite"
         />
-        <!-- 地點資訊只在沒顯示 profile 時顯示 -->
-        <LocationInfo v-if="!showProfilePanel" :place="displayPlace" :API_KEY="API_KEY" />
-
         <!-- 關閉按鈕 -->
         <button @click="$emit('close')" class="absolute top-3 right-3 text-gray-500 hover:text-black text-3xl">✕</button>
       </div>
@@ -203,6 +207,7 @@ import { useAuthStore } from '@/stores/authStore';
 import LocationInfo from './locationInfo.vue';
 import Profile from './profile.vue';
 import axios from 'axios';
+import LostPet from './lostPet.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -232,7 +237,8 @@ const props = defineProps({
     visible: Boolean,
     place: Object,
     types: Array,
-    selectedTypes: Array
+    selectedTypes: Array,
+    showLostPet: Boolean // 新增
 });
 
 const localPlace = ref(null); // 只給我的最愛用
@@ -245,7 +251,7 @@ watch(() => props.place, (newVal) => {
   }
 });
 
-defineEmits(['close', 'toggleType']);
+defineEmits(['close', 'toggleType', 'show-lost-pet', 'show-place-info']);
 
 // ✅ 匯入 Google Maps API Key
 const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
