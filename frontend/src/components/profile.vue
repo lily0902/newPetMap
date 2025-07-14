@@ -8,6 +8,7 @@
     <ul class="mb-4 space-y-2">
       <li v-for="r in myReports" :key="r._id" class="bg-gray-100 rounded p-2 flex justify-between items-center">
         <div>
+          <div><strong>寵物姓名：</strong>{{ r.petName || '（未填寫）' }}</div>
           <div><strong>時間：</strong>{{ r.datetime }}</div>
           <div><strong>地點：</strong>{{ r.location }}</div>
           <div><strong>描述：</strong>{{ r.description }}</div>

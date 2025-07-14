@@ -79,11 +79,12 @@ const missingPetReportSchema = new mongoose.Schema({
   datetime: { type: String, required: true },
   location: { type: String, required: true },
   description: { type: String, required: true },
-  image: { type: String, required: true }, // 檔名或路徑
+  image: { type: String, required: true }, // 檔名或路徑 
   latitude: { type: String, required: true },
   longitude: { type: String, required: true },
   userName: { type: String, required: true },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  petName: { type: String, default: '' }, // 新增寵物姓名欄位，可選填
   status: { type: String, default: '尋找中' },
   createdAt: { type: Date, default: Date.now }
 });
@@ -259,7 +260,7 @@ app.post('/api/logout', authenticateToken, async (req, res) => {
 // 新增寵物失蹤回報 API
 app.post('/api/report-missing-pet', upload.single('image'), async (req, res) => {
   try {
-    const { datetime, location, description, latitude, longitude, userName, userId } = req.body;
+    const { datetime, location, description, latitude, longitude, userName, userId, petName } = req.body;
     if (!req.file) {
       return res.status(400).json({ message: '圖片上傳失敗' });
     }
@@ -275,6 +276,7 @@ app.post('/api/report-missing-pet', upload.single('image'), async (req, res) => 
       longitude,
       userName,
       userId,
+      petName: petName || '',
       status: '尋找中'
     });
     await report.save();

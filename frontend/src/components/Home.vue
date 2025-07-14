@@ -137,6 +137,7 @@
         <span v-if="errors.datetime" class="text-red-500 text-xs mb-2">{{ errors.datetime }}</span>
         <input v-model="form.location" type="text" class="bg-gray-100 text-gray-900 border-0 rounded-md p-2 mb-1 text-sm sm:text-base focus:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition ease-in-out duration-150" placeholder="失蹤地點">
         <span v-if="errors.location" class="text-red-500 text-xs mb-2">{{ errors.location }}</span>
+        <input v-model="form.petName" type="text" class="bg-gray-100 text-gray-900 border-0 rounded-md p-2 mb-1 text-sm sm:text-base focus:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition ease-in-out duration-150" placeholder="寵物姓名 (可不填)">
         <textarea v-model="form.description" class="bg-gray-100 text-gray-900 border-0 rounded-md p-2 mb-1 text-sm sm:text-base focus:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition ease-in-out duration-150" placeholder="寵物特徵描述"></textarea>
         <span v-if="errors.description" class="text-red-500 text-xs mb-2">{{ errors.description }}</span>
         <input @change="handleFile" type="file" accept="image/*" class="bg-gray-100 text-gray-900 border-0 rounded-md p-2 mb-1 text-sm sm:text-base focus:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition ease-in-out duration-150" placeholder="寵物照片">
@@ -195,6 +196,7 @@ const showForm = ref(false);
 const form = ref({
   datetime: '', // 失蹤日期時間
   location: '', // 失蹤地點
+  petName: '', // 新增寵物姓名
   description: '', // 寵物特徵描述
   image: null, // 寵物照片
   latitude: '', // 緯度
@@ -492,6 +494,7 @@ async function submitForm(ev) {
     const formData = new FormData();
     formData.append('datetime', form.value.datetime);
     formData.append('location', form.value.location);
+    formData.append('petName', form.value.petName || '');
     formData.append('description', form.value.description);
     formData.append('image', form.value.image);
     formData.append('latitude', lat ?? '');
