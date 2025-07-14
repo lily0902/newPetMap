@@ -8,6 +8,7 @@ require('dotenv').config();
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const axios = require('axios');
 
 const app = express();
 app.use(cors());
@@ -50,6 +51,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   username: { type: String, required: true },
+  favorites: { type: [String], default: [] },
   createdAt: { type: Date, default: Date.now }
 });
 const User = mongoose.model('User', userSchema);
@@ -81,6 +83,7 @@ const missingPetReportSchema = new mongoose.Schema({
   longitude: { type: String, required: true },
   userName: { type: String, required: true },
   userId: { type: String, required: true },
+  status: { type: String, default: '尋找中' },
   createdAt: { type: Date, default: Date.now }
 });
 const MissingPetReport = mongoose.model('MissingPetReport', missingPetReportSchema);
@@ -270,13 +273,63 @@ app.post('/api/report-missing-pet', upload.single('image'), async (req, res) => 
       latitude,
       longitude,
       userName,
-      userId
+      userId,
+      status: '尋找中'
     });
     await report.save();
     res.status(201).json({ message: '回報成功' });
   } catch (err) {
     console.error('寵物失蹤回報錯誤:', err);
     res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// 收藏地點（加入最愛）
+app.post('/api/user/favorite', authenticateToken, async (req, res) => {
+  const { placeId } = req.body;
+  if (!placeId) return res.status(400).json({ message: 'placeId required' });
+  try {
+    await User.findByIdAndUpdate(req.user.userId, { $addToSet: { favorites: placeId } });
+    res.json({ message: '已加入最愛' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+// 取消收藏地點（移除最愛）
+app.delete('/api/user/favorite', authenticateToken, async (req, res) => {
+  const { placeId } = req.body;
+  if (!placeId) return res.status(400).json({ message: 'placeId required' });
+  try {
+    await User.findByIdAndUpdate(req.user.userId, { $pull: { favorites: placeId } });
+    res.json({ message: '已移除最愛' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// 取得會員收藏地點（我的最愛）
+app.get('/api/user/favorites', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    res.json({ favorites: user.favorites || [] });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// 代理 Google Places API，解決 CORS 問題
+app.get('/api/proxy/place-details', authenticateToken, async (req, res) => {
+  const { placeId, language } = req.query;
+  if (!placeId) return res.status(400).json({ message: 'placeId required' });
+  const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.VITE_GOOGLE_MAPS_API_KEY;
+  try {
+    const lang = language || 'zh-TW';
+    const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=place_id,name,formatted_address,photos,vicinity,international_phone_number,formatted_phone_number,opening_hours,current_opening_hours,rating,reviews&language=${lang}&key=${GOOGLE_API_KEY}`;
+    const response = await axios.get(url);
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ message: 'Google API error', error: err.message, detail: err.response?.data });
+    console.error('Google API error:', err.response?.data || err.message, 'url:', req.originalUrl);
   }
 });
 

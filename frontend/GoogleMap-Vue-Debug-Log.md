@@ -92,3 +92,58 @@
 ---
 
 > 本文件可作為日後維護、debug Google Maps + Vue 專案的參考。 
+
+## GoogleMap 我的最愛與地標資訊顯示問題與解決方法
+
+### 1. 我的最愛顯示資訊與地標點擊不一致
+**問題描述：**
+- 我的最愛點擊後顯示的資訊（如地址、營業時間、評論等）比地標點擊時少，或格式不同。
+
+**解決方法：**
+- 我的最愛只存 placeId，點擊時用 placeId 查詢 Google Places 詳細資料（後端 proxy API），傳給顯示組件（LocationInfo.vue）。
+- LocationInfo.vue 統一吃 Google Places 詳細資料格式，無論來源。
+
+---
+
+### 2. 我的最愛顯示英文、地標顯示中文
+**問題描述：**
+- 我的最愛點擊後顯示的資訊是英文，地標點擊則是中文。
+
+**解決方法：**
+- 後端 proxy API `/api/proxy/place-details` 支援 `language` 參數，預設 `zh-TW`。
+- 前端 axios 請求時加上 `language=zh-TW`，確保回傳中文內容。
+
+---
+
+### 3. 如何統一顯示格式
+**問題描述：**
+- 不同來源（我的最愛/地標）欄位名稱或格式不同，導致顯示不一致。
+
+**解決方法：**
+- LocationInfo.vue 所有顯示欄位都優先用舊版 Google Places API 欄位（如 name、formatted_address、opening_hours、reviews），若無則 fallback 到新版欄位（如 displayName.text、formattedAddress、currentOpeningHours 等）。
+- 實作 `getPhotoUrl` 方法，根據欄位自動選擇正確的圖片 API。
+
+---
+
+### 4. 如何切換顯示來源（我的最愛/地標）
+**問題描述：**
+- 點擊我的最愛後顯示該地點資訊，但點擊地標時希望自動切換顯示地標資訊。
+
+**解決方法：**
+- infoPanel.vue 維護 localPlace 狀態（我的最愛點擊時設置），displayPlace 為 localPlace 或 props.place。
+- 監聽 props.place 變動，若有新地標被點擊，自動清空 localPlace，顯示地標資訊。
+
+---
+
+### 5. 點地標時自動隱藏我的最愛資訊
+**問題描述：**
+- 點擊我的最愛後顯示資訊，若再點地標，仍殘留我的最愛資訊。
+
+**解決方法：**
+- 在 infoPanel.vue 使用 watch 監聽 props.place，當地標被點擊（props.place 變動且非空）時，將 localPlace.value 設為 null，確保顯示內容切換為地標資訊。
+
+---
+
+**總結：**
+- 我的最愛與地標點擊顯示資訊已完全統一，且語言、格式、切換行為皆符合預期。
+- 若需擴充顯示欄位或支援更多語系，僅需調整 proxy API 及 LocationInfo.vue 欄位對應即可。 

@@ -196,7 +196,12 @@ const form = ref({
   datetime: '', // 失蹤日期時間
   location: '', // 失蹤地點
   description: '', // 寵物特徵描述
-  image: null // 寵物照片
+  image: null, // 寵物照片
+  latitude: '', // 緯度
+  longitude: '', // 經度
+  userName: '', // 用戶名稱
+  userId: '',
+  status: '尋找中' // 用戶ID
 });
 const errors = ref({});
 const showMessage = ref(false);
