@@ -13,6 +13,7 @@ const axios = require('axios');
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 // MongoDB 連線
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/petmap');
@@ -82,7 +83,7 @@ const missingPetReportSchema = new mongoose.Schema({
   latitude: { type: String, required: true },
   longitude: { type: String, required: true },
   userName: { type: String, required: true },
-  userId: { type: String, required: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   status: { type: String, default: '尋找中' },
   createdAt: { type: Date, default: Date.now }
 });
@@ -330,6 +331,28 @@ app.get('/api/proxy/place-details', authenticateToken, async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Google API error', error: err.message, detail: err.response?.data });
     console.error('Google API error:', err.response?.data || err.message, 'url:', req.originalUrl);
+  }
+});
+
+// 取得目前用戶的所有失蹤回報
+app.get('/api/my-missing-reports', authenticateToken, async (req, res) => {
+  try {
+    const reports = await MissingPetReport.find({ userId: req.user.userId }).sort({ createdAt: -1 });
+    res.json({ reports });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// 刪除指定失蹤回報（僅限本人）
+app.delete('/api/my-missing-reports/:id', authenticateToken, async (req, res) => {
+  try {
+    const report = await MissingPetReport.findOne({ _id: req.params.id, userId: req.user.userId });
+    if (!report) return res.status(404).json({ message: 'Report not found or not authorized.' });
+    await report.deleteOne();
+    res.json({ message: 'Report deleted.' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error.' });
   }
 });
 
