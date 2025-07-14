@@ -131,23 +131,24 @@
   <div v-if="showForm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-2">
     <div class="w-full max-w-md sm:max-w-lg md:max-w-xl bg-white rounded-lg shadow-md p-4 sm:p-6 relative job-form animate-slide-down">
       <button @click="closeForm" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
-      <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-4 text-center">Job Application Form</h2>
+      <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-4 text-center">寵物失蹤回報</h2>
       <form class="flex flex-col" @submit="submitForm" autocomplete="off">
-        <input v-model="form.name" type="text" class="bg-gray-100 text-gray-900 border-0 rounded-md p-2 mb-1 text-sm sm:text-base focus:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition ease-in-out duration-150" placeholder="Full Name">
-        <span v-if="errors.name" class="text-red-500 text-xs mb-2">{{ errors.name }}</span>
-        <input v-model="form.email" type="email" class="bg-gray-100 text-gray-900 border-0 rounded-md p-2 mb-1 text-sm sm:text-base focus:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition ease-in-out duration-150" placeholder="Email">
-        <span v-if="errors.email" class="text-red-500 text-xs mb-2">{{ errors.email }}</span>
-        <input v-model="form.phone" type="text" class="bg-gray-100 text-gray-900 border-0 rounded-md p-2 mb-1 text-sm sm:text-base focus:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition ease-in-out duration-150" placeholder="Phone Number">
-        <span v-if="errors.phone" class="text-red-500 text-xs mb-2">{{ errors.phone }}</span>
-        <input v-model="form.linkedin" type="text" class="bg-gray-100 text-gray-900 border-0 rounded-md p-2 mb-1 text-sm sm:text-base focus:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition ease-in-out duration-150" placeholder="LinkedIn Profile URL">
-        <span v-if="errors.linkedin" class="text-red-500 text-xs mb-2">{{ errors.linkedin }}</span>
-        <textarea v-model="form.cover" name="cover_letter" class="bg-gray-100 text-gray-900 border-0 rounded-md p-2 mb-1 text-sm sm:text-base focus:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition ease-in-out duration-150" placeholder="Cover Letter"></textarea>
-        <span v-if="errors.cover" class="text-red-500 text-xs mb-2">{{ errors.cover }}</span>
-        <input @change="handleFile" type="file" class="bg-gray-100 text-gray-900 border-0 rounded-md p-2 mb-1 text-sm sm:text-base focus:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition ease-in-out duration-150" placeholder="Resume">
-        <span v-if="errors.resume" class="text-red-500 text-xs mb-2">{{ errors.resume }}</span>
-        <button type="submit" class="bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-bold py-2 px-4 rounded-md mt-4 text-base sm:text-lg hover:bg-indigo-600 hover:to-blue-600 transition ease-in-out duration-150">Apply</button>
+        <input v-model="form.datetime" type="datetime-local" class="bg-gray-100 text-gray-900 border-0 rounded-md p-2 mb-1 text-sm sm:text-base focus:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition ease-in-out duration-150" placeholder="失蹤日期時間">
+        <span v-if="errors.datetime" class="text-red-500 text-xs mb-2">{{ errors.datetime }}</span>
+        <input v-model="form.location" type="text" class="bg-gray-100 text-gray-900 border-0 rounded-md p-2 mb-1 text-sm sm:text-base focus:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition ease-in-out duration-150" placeholder="失蹤地點">
+        <span v-if="errors.location" class="text-red-500 text-xs mb-2">{{ errors.location }}</span>
+        <textarea v-model="form.description" class="bg-gray-100 text-gray-900 border-0 rounded-md p-2 mb-1 text-sm sm:text-base focus:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition ease-in-out duration-150" placeholder="寵物特徵描述"></textarea>
+        <span v-if="errors.description" class="text-red-500 text-xs mb-2">{{ errors.description }}</span>
+        <input @change="handleFile" type="file" accept="image/*" class="bg-gray-100 text-gray-900 border-0 rounded-md p-2 mb-1 text-sm sm:text-base focus:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition ease-in-out duration-150" placeholder="寵物照片">
+        <span v-if="errors.image" class="text-red-500 text-xs mb-2">{{ errors.image }}</span>
+        <button type="submit" class="bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-bold py-2 px-4 rounded-md mt-4 text-base sm:text-lg hover:bg-indigo-600 hover:to-blue-600 transition ease-in-out duration-150">送出回報</button>
       </form>
     </div>
+  </div>
+  <!-- 成功/失敗提示訊息 -->
+  <div v-if="showMessage" :class="['fixed top-8 left-1/2 z-50 -translate-x-1/2 px-6 py-3 rounded shadow-lg text-white text-lg transition-all', messageType === 'success' ? 'bg-green-500' : 'bg-red-500']">
+    {{ messageText }}
+    <button class="ml-4 text-white font-bold" @click="showMessage = false">&times;</button>
   </div>
 </template>
 
@@ -192,14 +193,15 @@ const locationStore = useLocationStore();
 const openFilterOnly = ref(false);
 const showForm = ref(false);
 const form = ref({
-  name: '',
-  email: '',
-  phone: '',
-  linkedin: '',
-  cover: '',
-  resume: null
+  datetime: '', // 失蹤日期時間
+  location: '', // 失蹤地點
+  description: '', // 寵物特徵描述
+  image: null // 寵物照片
 });
 const errors = ref({});
+const showMessage = ref(false);
+const messageText = ref('');
+const messageType = ref('success'); // 'success' or 'error'
 
 const restaurantMarkers = ref([]);
 const hotelMarkers = ref([]);
@@ -466,26 +468,48 @@ function closeForm() {
 
 function validateForm() {
   const e = {};
-  if (!form.value.name) e.name = 'Full Name is required';
-  if (!form.value.email) e.email = 'Email is required';
-  else if (!/^\S+@\S+\.\S+$/.test(form.value.email)) e.email = 'Invalid email';
-  if (!form.value.phone) e.phone = 'Phone Number is required';
-  if (!form.value.linkedin) e.linkedin = 'LinkedIn is required';
-  if (!form.value.cover) e.cover = 'Cover Letter is required';
-  if (!form.value.resume) e.resume = 'Resume is required';
+  if (!form.value.datetime) e.datetime = '請填寫失蹤日期時間';
+  if (!form.value.location) e.location = '請填寫失蹤地點';
+  if (!form.value.description) e.description = '請填寫寵物特徵描述';
+  if (!form.value.image) e.image = '請上傳寵物照片';
   errors.value = e;
   return Object.keys(e).length === 0;
 }
 
 function handleFile(e) {
-  form.value.resume = e.target.files[0];
+  form.value.image = e.target.files[0];
 }
 
-function submitForm(ev) {
+async function submitForm(ev) {
   ev.preventDefault();
   if (validateForm()) {
-    // 可在此送出資料
-    closeForm();
+    const { lat, lng } = locationStore.userLocation || {};
+    const formData = new FormData();
+    formData.append('datetime', form.value.datetime);
+    formData.append('location', form.value.location);
+    formData.append('description', form.value.description);
+    formData.append('image', form.value.image);
+    formData.append('latitude', lat ?? '');
+    formData.append('longitude', lng ?? '');
+    formData.append('userName', authStore.user?.username ?? '');
+    formData.append('userId', authStore.user?.id ?? '');
+    try {
+      const res = await fetch('/api/report-missing-pet', {
+        method: 'POST',
+        body: formData
+      });
+      if (!res.ok) throw new Error('送出失敗');
+      closeForm();
+      messageType.value = 'success';
+      messageText.value = '送出成功！感謝您的回報';
+      showMessage.value = true;
+      setTimeout(() => { showMessage.value = false; }, 3000);
+    } catch (err) {
+      messageType.value = 'error';
+      messageText.value = '送出失敗，請稍後再試';
+      showMessage.value = true;
+      setTimeout(() => { showMessage.value = false; }, 3000);
+    }
   }
 }
 

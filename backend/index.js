@@ -5,6 +5,9 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 
 const app = express();
 app.use(cors());
@@ -50,6 +53,37 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 const User = mongoose.model('User', userSchema);
+
+// 圖片上傳資料夾
+const uploadDir = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  console.warn('請手動建立 public/uploads 目錄於 backend 目錄下，否則圖片無法儲存！');
+}
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname);
+    const basename = path.basename(file.originalname, ext);
+    cb(null, basename + '-' + Date.now() + ext);
+  }
+});
+const upload = multer({ storage });
+
+// MissingPetReport Schema
+const missingPetReportSchema = new mongoose.Schema({
+  datetime: { type: String, required: true },
+  location: { type: String, required: true },
+  description: { type: String, required: true },
+  image: { type: String, required: true }, // 檔名或路徑
+  latitude: { type: String, required: true },
+  longitude: { type: String, required: true },
+  userName: { type: String, required: true },
+  userId: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
+});
+const MissingPetReport = mongoose.model('MissingPetReport', missingPetReportSchema);
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 
@@ -214,6 +248,34 @@ app.post('/api/logout', authenticateToken, async (req, res) => {
     res.json({ message: 'Logout successful' });
   } catch (err) {
     console.error('登出錯誤:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// 新增寵物失蹤回報 API
+app.post('/api/report-missing-pet', upload.single('image'), async (req, res) => {
+  try {
+    const { datetime, location, description, latitude, longitude, userName, userId } = req.body;
+    if (!req.file) {
+      return res.status(400).json({ message: '圖片上傳失敗' });
+    }
+    if (!datetime || !location || !description || !latitude || !longitude || !userName || !userId) {
+      return res.status(400).json({ message: '所有欄位皆為必填' });
+    }
+    const report = new MissingPetReport({
+      datetime,
+      location,
+      description,
+      image: req.file.filename,
+      latitude,
+      longitude,
+      userName,
+      userId
+    });
+    await report.save();
+    res.status(201).json({ message: '回報成功' });
+  } catch (err) {
+    console.error('寵物失蹤回報錯誤:', err);
     res.status(500).json({ message: 'Server error.' });
   }
 });

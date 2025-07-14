@@ -10,5 +10,9 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "fs": "^0.0.1-security",
+    "multer": "^2.0.1"
   }
-} 
+}
