@@ -55,4 +55,14 @@ router.delete('/my-missing-reports/:id', authenticateToken, async (req, res) => 
   }
 });
 
+// 取得所有走失寵物資料（公開）
+router.get('/missing-pets', async (req, res) => {
+  try {
+    const reports = await MissingPetReport.find().sort({ createdAt: -1 });
+    res.json({ reports });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
 module.exports = router; 

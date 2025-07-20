@@ -176,14 +176,15 @@
             {{ type }}
             </button>
             <button
-              class="px-3 py-1 rounded-full bg-red-200 hover:bg-red-400 text-red-800"
+              :class="['px-3 py-1 rounded-full', showLostPet ? 'bg-red-600 text-white' : 'bg-red-200 hover:bg-red-400 text-red-800']"
               @click="$emit('show-lost-pet')"
             >走失</button>
         </div>
         <!-- 根據 showLostPet prop 插入 lostPet.vue -->
         <LostPet v-if="showLostPet" />
+        <LostPetInfo v-if="place && place.status === '尋找中'" :report="place" @close="$emit('close')" />
         <!-- 地點資訊只在沒顯示 lostPet 時顯示 -->
-        <LocationInfo v-else-if="!showProfilePanel" :place="displayPlace" :API_KEY="API_KEY" @show-place-info="$emit('show-place-info')" />
+        <LocationInfo v-else-if="!showProfilePanel && (!place || place.status !== '尋找中')" :place="displayPlace" :API_KEY="API_KEY" @show-place-info="$emit('show-place-info')" />
         <!-- Profile 放在篩選器下方 -->
         <Profile
           v-if="showProfilePanel"
@@ -208,6 +209,7 @@ import LocationInfo from './locationInfo.vue';
 import Profile from './profile.vue';
 import axios from 'axios';
 import LostPet from './lostPet.vue';
+import LostPetInfo from './LostPetInfo.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();

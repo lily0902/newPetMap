@@ -124,8 +124,10 @@
     :types="ALL_TYPES"
     :selectedTypes="activeTypes"
     :openFilterOnly="openFilterOnly"
+    :showLostPet="showLostPet"
     @close="isPanelVisible = false"
     @toggleType="togglePlaceType"
+    @show-lost-pet="handleShowLostPet"
   />
   <!-- 彈窗表單 -->
   <div v-if="showForm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-2">
@@ -163,6 +165,7 @@ import { useLocationStore } from '@/stores/locationStore';
 import { usePlacesLoader } from '@/composables/usePlacesLoader';
 import { useAuthStore } from '@/stores/authStore';
 import InfoPanel from '@/components/InfoPanel.vue';
+import { useLostPetMarkers } from '@/composables/useLostPetMarkers';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -213,7 +216,11 @@ const messageType = ref('success'); // 'success' or 'error'
 const restaurantMarkers = ref([]);
 const hotelMarkers = ref([]);
 const hospitalMarkers = ref([]); // 若你有
-//const { loadPlacesByQuery } = usePlacesLoader(map, selectedPlace);
+const lostPetMarkers = ref([]);
+const showLostPet = ref(false);
+const selectedReport = ref(null); // For lost pet info
+
+const { showLostPetMarkers, hideLostPetMarkers, setLostPetMarkersVisible } = useLostPetMarkers(selectedReport, lostPetMarkers, onLostPetMarkerClick);
 
 //provide('googleMap', map) // 提供給子組件使用
 
@@ -247,6 +254,26 @@ function onMarkerClick(place) {
   if (!isPanelVisible.value) {
     isPanelVisible.value = true; // 初次打開才觸發動畫
   }
+}
+
+function onLostPetMarkerClick(report) {
+  selectedPlace.value = report;
+  if (!isPanelVisible.value) isPanelVisible.value = true;
+}
+
+function handleShowLostPet() {
+  showLostPet.value = !showLostPet.value;
+  const map = mapStore.getMap();
+  if (showLostPet.value && map) {
+    showLostPetMarkers(map);
+  } else {
+    hideLostPetMarkers();
+    // Also clear selectedPlace if it was a lost pet
+    if (selectedPlace.value && selectedPlace.value.status === '尋找中') {
+      selectedPlace.value = null;
+    }
+  }
+  updateMarkersVisibility();
 }
 
 // 載入 Google Maps JS API
@@ -371,6 +398,7 @@ watch(
     clearMarkers(hospitalMarkers);
     clearMarkers(restaurantMarkers);
     clearMarkers(hotelMarkers);
+    clearMarkers(lostPetMarkers); // Clear lost pet markers
 
     const { loadPlacesByQuery } = usePlacesLoader(() => mapStore.getMap(), selectedPlace);
     const tasks = [];
@@ -415,6 +443,8 @@ function updateMarkersVisibility() {
   window.restaurantMarkers = restaurantMarkers;
   window.hospitalMarkers = hospitalMarkers;
   window.mapStore = mapStore;
+  window.lostPetMarkers = lostPetMarkers; // Add lostPetMarkers to window for InfoPanel
+  window.showLostPet = showLostPet; // Add showLostPet to window for InfoPanel
 
   if (activeTypes.value.includes('醫院')) {
     hospitalMarkers.value.forEach(marker => {
@@ -449,6 +479,8 @@ function updateMarkersVisibility() {
       if (typeof marker.setVisible === 'function') marker.setVisible(false);
     });
   }
+  // Lost pet markers
+  setLostPetMarkersVisible(map, showLostPet.value);
 }
 
 function handleAddButtonClick() {
