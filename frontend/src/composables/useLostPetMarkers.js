@@ -19,7 +19,12 @@ export function useLostPetMarkers(selectedReport, lostPetMarkers, onMarkerClick)
         const marker = new window.google.maps.Marker({
           position: { lat, lng },
           map,
-          title: report.petName || '走失寵物'
+          title: report.petName || '走失寵物',
+          icon: {
+            url: '/assets/icons/searchpet.png',
+            scaledSize: new window.google.maps.Size(30, 30),
+            anchor: new window.google.maps.Point(15, 30)
+          }
           // icon: '/assets/icons/searchpet.png'
         });
         marker.addListener('click', () => {
@@ -34,13 +39,18 @@ export function useLostPetMarkers(selectedReport, lostPetMarkers, onMarkerClick)
     });
     // 不再自動 fitBounds 或 setZoom
     // 強制加一個測試 marker（台北101）
-    const testMarker = new window.google.maps.Marker({
-      position: { lat: 25.033964, lng: 121.564468 },
-      map,
-      title: '測試marker'
-      // icon: '/assets/icons/searchpet.png'
-    });
-    console.log('[LostPetMarkers] 測試marker created:', testMarker, testMarker.getMap());
+    // const testMarker = new window.google.maps.Marker({
+    //   position: { lat: 25.033964, lng: 121.564468 },
+    //   map,
+    //   title: '測試marker',
+    //   icon: {
+    //     url: './assets/icons/searchpet.png',
+    //     scaledSize: new window.google.maps.Size(30, 30),
+    //     anchor: new window.google.maps.Point(15, 30)
+    //   }
+    //   // icon: '/assets/icons/searchpet.png'
+    // });
+    // console.log('[LostPetMarkers] 測試marker created:', testMarker, testMarker.getMap());
   }
 
   function hideLostPetMarkers() {
